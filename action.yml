@@ -1,0 +1,101 @@
+name: "Run Terraform via Terragrunt"
+description: "This action setup, caches and runs terraform via terragrunt including ssh-agent."
+
+author: Datadrivers GmbH
+
+inputs:
+  terraform-version:
+    description: "terraform version to setup"
+    required: false
+    default: "latest"
+  terragrunt-version:
+    description: "terragrunt version to setup"
+    required: false
+    default: "latest"
+  terragrunt-working-directory:
+    description: "working-directory for terragrunt command"
+    required: false
+    default: "."
+  terragrunt-command:
+    description: "terragrunt execution line. For multiple commands use | syntax"
+    required: true
+  aws-region:
+    description: "AWS Region for Login"
+    required: false
+    default: "eu-central-1"
+  aws-role-to-assume:
+    description: "AWS IAM Role for github action to access aws api"
+    required: true
+  aws-role-duration-seconds:
+    description: "AWS session time"
+    required: false
+    default: "1800"
+  terragrunt-download-cache-target:
+    description: "Helper to differ terragrunt cache dirs from other runs. Useful if remote state configs (terraform code) rely on environment variables"
+    required: false
+    default: ""
+  skip-caches:
+    description: "Toggle to skip caches"
+    required: false
+    default: "false"
+  use-ssh-agent:
+    description: "Toggle to setup ssh agent with private key. Requires github action secret passed to `ssh-private-key`"
+    required: false
+    default: "false"
+  ssh-private-key:
+    description: "Content of secret passed in here`"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    # Setup terraform
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1.3.2
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        terraform_wrapper: false
+    - name: Terragrunt Binary Installer Action
+      uses: autero1/action-terragrunt@v1.0.1
+      with:
+        terragrunt_version: ${{ inputs.terragrunt-version }}
+    - name: Config caches
+      if: inputs.skip-caches == 'false'
+      shell: bash
+      run: |
+        TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+        echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_ENV
+        mkdir --parents $TF_PLUGIN_CACHE_DIR
+        TERRAGRUNT_DOWNLOAD="$HOME/.terragrunt-cache/${{ inputs.terragrunt-download-cache-target }}"
+        echo "TERRAGRUNT_DOWNLOAD=$TERRAGRUNT_DOWNLOAD" >> $GITHUB_ENV
+        mkdir --parents $TERRAGRUNT_DOWNLOAD
+    - name: Cache Terraform
+      if: inputs.skip-caches == 'false'
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.terraform.d/plugin-cache
+        key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+    - name: Cache Terragrunt
+      if: inputs.skip-caches == 'false'
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.terragrunt-cache/
+        key: ${{ runner.os }}-${{ env.TERRAGRUNT_DOWNLOAD }}-${{ hashFiles('**/project.hcl', '**/.terraform.lock.hcl') }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.aws-role-to-assume }}
+        role-duration-seconds: ${{ inputs.aws-role-duration-seconds }}
+    - name: Setup SSH agent
+      if: inputs.use-ssh-agent == 'true'
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ inputs.ssh-private-key }}
+    - name: Run Terraform
+      shell: bash
+      working-directory: ${{ inputs.terragrunt-working-directory }}
+      run: ${{ inputs.terragrunt-command }}
