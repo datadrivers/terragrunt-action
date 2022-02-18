@@ -2,14 +2,15 @@
 
 ## Examples
 
-### Run terraform plan via terragrunt
+### Run terraform validate and plan via terragrunt
 
 ```yaml
       - name: run terraform
-        uses: ./.github/actions/run-terragrunt
+        uses: datadrivers/terragrunt-action@0.1.0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
@@ -20,14 +21,34 @@
             terragrunt run-all plan
 ```
 
+### Run terraform plan via terragrunt and gcloud auth
+
+```yaml
+      - name: run terraform
+        uses: datadrivers/terragrunt-action@
+        with:
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-gcloud-auth: "true"
+          gcp-workload-identity-provider: "projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
+          gcp-service-account-email: "automation-github@project-id.iam.gserviceaccount.com"
+          gcp-project-id: "123456789"
+          skip-caches: "false"
+          use-ssh-agent: "true"
+          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+          terragrunt-command: |
+            terragrunt run-all plan
+```
+
 ### Run terraform without terragrunt
 
 ```yaml
       - name: run terraform
-        uses: ./.github/actions/run-terragrunt
+        uses: datadrivers/terragrunt-action@
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
@@ -79,10 +100,11 @@ jobs:
           echo "TERRAFORM_VERSION=$TF_VER" >> $GITHUB_ENV
           echo "TERRAGRUNT_VERSION=$TG_VER" >> $GITHUB_ENV
       - name: run terraform
-        uses: ./.github/actions/run-terragrunt
+        uses: datadrivers/terragrunt-action@
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           terragrunt-download-cache-target: ${{ env.ACCOUNT }}
