@@ -32,6 +32,7 @@
           use-gcloud-auth: "true"
           gcp-workload-identity-provider: "projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
           gcp-service-account-email: "automation-github@project-id.iam.gserviceaccount.com"
+          gcp-project-id: "123456789"
           skip-caches: "false"
           use-ssh-agent: "true"
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}

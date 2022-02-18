@@ -44,15 +44,21 @@ inputs:
       project number, pool name, and provider name. If provided, this must be
       the full identifier which includes all parts, for example:
       "projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider".
+      This is required if "use-gcloud-auth" is true.
     required: false
     default: ""
   gcp-service-account-email:
     description: |-
       Email address or unique identifier of the Google Cloud service account for
       which to generate credentials. This is required if
-      "workload_identity_provider" is specified.
+      "workload_identity_provider" is specified and "use-gcloud-auth" is true.
     required: false
     default: ""
+  gcp-project-id:
+    description: |-
+      ID of the default project to use for future API calls and invocations. This is required if
+      "use-gcloud-auth" is true.
+    required: false
   terragrunt-download-cache-target:
     description: "Helper to differ terragrunt cache dirs from other runs. Useful if remote state configs (terraform code) rely on environment variables"
     required: false
@@ -112,6 +118,7 @@ runs:
       name: "Authenticate to GCP"
       uses: "google-github-actions/auth@v0"
       with:
+        project_id: ${{ inputs.gcp-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
         service_account: ${{ inputs.gcp-service-account-email }}
     - id: "aws-auth"
