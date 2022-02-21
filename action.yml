@@ -3,6 +3,10 @@ description: "This action setup, caches and runs terraform via terragrunt includ
 
 author: Datadrivers GmbH
 
+branding:
+  icon: 'terminal'
+  color: 'blue'
+
 inputs:
   terraform-version:
     description: "terraform version to setup"
