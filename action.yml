@@ -4,18 +4,18 @@ description: "This action setup, caches and runs terraform via terragrunt includ
 author: Datadrivers GmbH
 
 branding:
-  icon: 'terminal'
-  color: 'blue'
+  icon: "terminal"
+  color: "blue"
 
 inputs:
   terraform-version:
-    description: "terraform version to setup"
+    description: "terraform version to setup. A version is required to install terraform binarys."
     required: false
-    default: "latest"
+    default: "disabled"
   terragrunt-version:
-    description: "terragrunt version to setup"
+    description: "terragrunt version to setup. A version is required to install terragrunt binarys."
     required: false
-    default: "latest"
+    default: "disabled"
   terragrunt-working-directory:
     description: "working-directory for terragrunt command"
     required: false
@@ -86,11 +86,13 @@ runs:
     # Setup terraform
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1.3.2
+      if: inputs.terraform-version != 'disabled'
       with:
         terraform_version: ${{ inputs.terraform-version }}
         terraform_wrapper: false
     - name: Terragrunt Binary Installer Action
       uses: autero1/action-terragrunt@v1.0.1
+      if: inputs.terragrunt-version != 'disabled'
       with:
         terragrunt_version: ${{ inputs.terragrunt-version }}
     - name: Config caches
