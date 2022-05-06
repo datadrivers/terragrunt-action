@@ -46,7 +46,7 @@ jobs:
           echo "TERRAFORM_VERSION=$TF_VER" >> $GITHUB_ENV
           echo "TERRAGRUNT_VERSION=$TG_VER" >> $GITHUB_ENV
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0.3.0
+        uses: datadrivers/terragrunt-action@v0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -66,7 +66,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0.3.0
+        uses: datadrivers/terragrunt-action@v0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -85,7 +85,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0.3.0
+        uses: datadrivers/terragrunt-action@v0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -104,7 +104,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0.3.0
+        uses: datadrivers/terragrunt-action@v0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
