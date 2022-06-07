@@ -9,15 +9,23 @@ branding:
 
 inputs:
   terraform-version:
-    description: "terraform version to setup. A version is required to install terraform binarys."
+    description: "terraform version to setup. A version is required to install terraform binarys"
     required: false
     default: "disabled"
+  terraform-plan-filename:
+    description: "name for terraform plan files, which is used as input to generate plan json files as input for pr-commenter action"
+    required: false
+    default: "terraform.tfplan"
+  enable-terraform-change-pr-commenter:
+    description: "toggle to add pr comment for terraform-plan-filename files"
+    required: false
+    default: "false"
   terragrunt-version:
-    description: "terragrunt version to setup. A version is required to install terragrunt binarys."
+    description: "terragrunt version to setup. A version is required to install terragrunt binarys"
     required: false
     default: "disabled"
   terragrunt-working-directory:
-    description: "working-directory for terragrunt command"
+    description: "working-directory for github step to run terragrunt/terraform command"
     required: false
     default: "."
   terragrunt-command:
@@ -144,3 +152,25 @@ runs:
       shell: bash
       working-directory: ${{ inputs.terragrunt-working-directory }}
       run: ${{ inputs.terragrunt-command }}
+    - name: Prepare terraform plan files for pr comment
+      if: inputs.enable-terraform-change-pr-commenter == 'true'
+      shell: bash
+      id: tf-planfiles
+      run: |
+        planfiles_json=()
+        planfiles=$(find . -type f -name ${{ inputs.terraform-plan-filename }})
+        for planfile in $planfiles;
+        do
+          tfplan_json=$(dirname $planfile)/tfplan.json
+          pushd $(dirname $planfile)
+          terraform show -no-color -json $(basename $planfile) > tfplan.json
+          planfiles_json+=($tfplan_json)
+        done
+        content=$(printf "%s\n" "${planfiles_json[@]}")
+        echo "::set-output name=terraform_planfiles_json::${content}"
+    - name: Add PR comment for terraform plan changes
+      if: inputs.enable-terraform-change-pr-commenter == 'true'
+      uses: liatrio/terraform-change-pr-commenter@v1.3.1
+      with:
+        json-file: ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
+

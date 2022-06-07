@@ -38,7 +38,7 @@ jobs:
     name: TF code in project-dev
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set terra*_version variables from files
         run: |
           TF_VER=$(cat .terraform-version)
