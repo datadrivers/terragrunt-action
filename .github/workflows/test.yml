@@ -1,0 +1,38 @@
+name: Terraform Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+# Use ENV vars to configure parameters for steps
+env:
+  TERRAFORM_VERSION: 1.1.9
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-terraform-pr-comment:
+    name: TF code in examples/test-pr-comment
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          use-aws-auth: false
+          terragrunt-working-directory: examples/test-pr-comment
+          skip-caches: true
+          use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
+          terragrunt-command: |
+            terraform init
+            terraform providers lock
+            terraform plan -out terraform.tfplan # we need to make sure
