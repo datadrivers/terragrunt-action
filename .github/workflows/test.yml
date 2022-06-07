@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
-      - uses: datadrivers/terragrunt-action@v0
+      - uses: ./action.yml
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           # terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
