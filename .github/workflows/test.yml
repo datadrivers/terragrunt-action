@@ -10,9 +10,6 @@ defaults:
 
 # Use ENV vars to configure parameters for steps
 env:
-  AWS_REGION: "eu-central-1"
-  ACCOUNT: examples-test
-  TERRAGRUNT_PARALLELISM: 4 # limit CPU usage
   TERRAFORM_VERSION: 1.1.9
 
 permissions:
@@ -21,48 +18,21 @@ permissions:
   pull-requests: write
 
 jobs:
-  terraform-validate:
-    name: TF code in examples-test
+  test-terraform-pr-comment:
+    name: TF code in examples/test-pr-comment
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
       - uses: ./
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
-          # terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
-          use-aws-auth: "false"
-          aws-region: ${{ env.AWS_REGION }}
-          # aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          terragrunt-download-cache-target: ${{ env.ACCOUNT }}
-          terragrunt-working-directory: examples/test
-          skip-caches: "false"
-          use-ssh-agent: "false"
-          enable-terraform-change-pr-commenter: "true"
+          use-aws-auth: false
+          terragrunt-working-directory: examples/test-pr-comment
+          skip-caches: true
+          use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terraform init
             terraform providers lock
-            terraform plan -out terraform.tfplan
-      # - name: Prepare terraform plan files for pr comment
-      #   # if: inputs.enable-terraform-change-pr-commenter == 'true'
-      #   shell: bash
-      #   id: tfplanfiles
-      #   run: |
-      #     planfiles_json=()
-      #     planfiles=$(find . -type f -name terraform.tfplan)
-      #     for planfile in $planfiles;
-      #     do
-      #       tfplan_json=$(dirname $planfile)/tfplan.json
-      #       pushd $(dirname $planfile)
-      #       terraform show -no-color -json $(basename $planfile) > tfplan.json
-      #       ls -la
-      #       planfiles_json+=($tfplan_json)
-      #     done
-      #     content=$(printf "%s\n" "${planfiles_json[@]}")
-      #     echo "::set-output name=terraform_planfiles_json::${content}"
-      # - name: Add PR comment for terraform plan changes
-      #   # if: inputs.enable-terraform-change-pr-commenter == 'true'
-      #   uses: liatrio/terraform-change-pr-commenter@v1.3.1
-      #   with:
-      #     json-file: |
-      #       ${{ steps.tfplanfiles.outputs.terraform_planfiles_json }}
-      #     # expand-comment: "true"
+            terraform plan -out terraform.tfplan # we need to make sure

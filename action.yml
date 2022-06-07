@@ -13,11 +13,11 @@ inputs:
     required: false
     default: "disabled"
   terraform-plan-filename:
-    description: "name for terraform plan files, which is used as input to generate plan json files as input for pr-commenter action"
+    description: "name for terraform plan files, which are used as input to generate plan json files as input for pr-commenter action"
     required: false
     default: "terraform.tfplan"
   enable-terraform-change-pr-commenter:
-    description: "toggle to add pr comment for terraform-plan-filename files"
+    description: "toggle to add pr comment for terraform-plan-filename files. Requires pre-generated terraform.tfplan file."
     required: false
     default: "false"
   terragrunt-version:

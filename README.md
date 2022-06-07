@@ -107,7 +107,6 @@ jobs:
         uses: datadrivers/terragrunt-action@v0
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
-          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
@@ -116,4 +115,22 @@ jobs:
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           terragrunt-command: |
             terraform plan
+```
+
+### Run terraform and create pr comment for plan
+
+```yaml
+      - name: run terraform
+        uses: datadrivers/terragrunt-action@v0
+        with:
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          use-aws-auth: "true"
+          aws-region: ${{ env.AWS_REGION }}
+          aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          skip-caches: "false"
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
+          terragrunt-command: |
+            terraform init
+            terraform plan -out terraform.tfplan
 ```
