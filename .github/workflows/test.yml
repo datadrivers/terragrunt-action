@@ -53,6 +53,6 @@ jobs:
           enable-terraform-change-pr-commenter: true
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
-            terragrunt init
-            terragrunt providers lock
-            terragrunt plan
+            terragrunt run-all init
+            terragrunt run-all providers lock
+            terragrunt run-all plan

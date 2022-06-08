@@ -177,10 +177,14 @@ runs:
           popd
         done
         content=$(printf "%s\n" "${planfiles_json[@]}")
+        content="${content//'%'/'%25'}"
+        content="${content//$'\n'/'%0A'}"
+        content="${content//$'\r'/'%0D'}"
         echo "::set-output name=terraform_planfiles_json::${content}"
     - name: Add PR comment for terraform plan changes
       if: inputs.enable-terraform-change-pr-commenter == 'true'
       uses: liatrio/terraform-change-pr-commenter@v1.3.1
       with:
-        json-file: ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
+        json-file: |
+          ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
 
