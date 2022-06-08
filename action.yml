@@ -87,6 +87,10 @@ inputs:
     description: "Content of secret passed in here`"
     required: false
     default: ""
+  enable-debug:
+    description: "Add debug output to steps"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -157,6 +161,7 @@ runs:
       shell: bash
       id: tf-planfiles
       run: |
+        [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
         planfiles_json=()
         planfiles=$(find . -type f -name ${{ inputs.terraform-plan-filename }})
         for planfile in $planfiles

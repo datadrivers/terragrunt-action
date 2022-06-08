@@ -37,7 +37,7 @@ jobs:
             terraform init
             terraform providers lock
             terraform plan -out terraform.tfplan # we need to make sure
-  test-terragtun-pr-comment:
+  test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-20.04
     steps:
