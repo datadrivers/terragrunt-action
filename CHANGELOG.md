@@ -1,3 +1,9 @@
+## v0.4.1 (2022-06-08)
+
+### Fix
+
+- **pr-comment**: do not fail job if pr comment failed
+
 ## v0.4.0 (2022-06-08)
 
 ### Feat
