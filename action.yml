@@ -161,10 +161,12 @@ runs:
         planfiles=$(find . -type f -name ${{ inputs.terraform-plan-filename }})
         for planfile in $planfiles;
         do
+          terraform_bin="terraform"
           tfplan_json=$(dirname $planfile)/tfplan.json
           pushd $(dirname $planfile)
-          terraform show -no-color -json $(basename $planfile) > tfplan.json
-          planfiles_json+=($tfplan_json)
+          test -s terragrunt.hcl && terraform_bin="terragrunt"
+          $terraform_bin show -no-color -json $(basename "${planfile}") > "${tfplan_json}"
+          planfiles_json+=(${tfplan_json})
         done
         content=$(printf "%s\n" "${planfiles_json[@]}")
         echo "::set-output name=terraform_planfiles_json::${content}"
