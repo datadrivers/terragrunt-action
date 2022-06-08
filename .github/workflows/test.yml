@@ -11,6 +11,7 @@ defaults:
 # Use ENV vars to configure parameters for steps
 env:
   TERRAFORM_VERSION: 1.1.9
+  TERRAGRUNT_VERSION: 0.37.1
 
 permissions:
   id-token: write
@@ -20,7 +21,7 @@ permissions:
 jobs:
   test-terraform-pr-comment:
     name: TF code in examples/test-pr-comment
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: ./
@@ -36,3 +37,22 @@ jobs:
             terraform init
             terraform providers lock
             terraform plan -out terraform.tfplan # we need to make sure
+  test-terragtun-pr-comment:
+    name: TF code in examples/test-pr-comment-terragrunt
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: true
+          use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
+          terragrunt-command: |
+            terragrunt init
+            terragrunt providers lock
+            terragrunt plan
