@@ -156,11 +156,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.terragrunt-working-directory }}
       run: ${{ inputs.terragrunt-command }}
-    - name: Prepare terraform plan files for pr comment action
+    - name: Convert terraform plan files to json
       if: inputs.enable-terraform-change-pr-commenter == 'true'
       shell: bash
       id: tf-planfiles
       run: |
+        echo "::group::convert terraform plan files to json"
         [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
         planfiles_json=()
         planfiles=$(find . -type f -name ${{ inputs.terraform-plan-filename }})
@@ -181,6 +182,7 @@ runs:
         content="${content//$'\n'/'%0A'}"
         content="${content//$'\r'/'%0D'}"
         echo "::set-output name=terraform_planfiles_json::${content}"
+        echo "::endgroup::"
     - name: Add PR comment for terraform plan changes
       if: inputs.enable-terraform-change-pr-commenter == 'true'
       uses: liatrio/terraform-change-pr-commenter@v1.3.1
