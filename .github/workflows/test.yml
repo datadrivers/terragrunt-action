@@ -11,6 +11,7 @@ defaults:
 # Use ENV vars to configure parameters for steps
 env:
   TERRAFORM_VERSION: 1.1.9
+  TERRAGRUNT_VERSION: 0.37.1
 
 permissions:
   id-token: write
@@ -44,6 +45,7 @@ jobs:
       - uses: ./
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
           terragrunt-working-directory: examples/test-pr-comment-terragrunt
           skip-caches: true
