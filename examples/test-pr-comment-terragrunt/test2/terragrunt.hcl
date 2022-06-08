@@ -1,5 +1,5 @@
 terraform {
-  source = "${get_repo_root()}/examples/test-pr-comment"
+  source = "${get_repo_root()}/examples//test-pr-comment"
 
   extra_arguments "plan_args" {
     commands = ["plan"]
