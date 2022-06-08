@@ -152,16 +152,16 @@ runs:
       shell: bash
       working-directory: ${{ inputs.terragrunt-working-directory }}
       run: ${{ inputs.terragrunt-command }}
-    - name: Prepare terraform plan files for pr comment
+    - name: Prepare terraform plan files for pr comment action
       if: inputs.enable-terraform-change-pr-commenter == 'true'
       shell: bash
       id: tf-planfiles
       run: |
         planfiles_json=()
         planfiles=$(find . -type f -name ${{ inputs.terraform-plan-filename }})
-        for planfile in $planfiles;
+        for planfile in $planfiles
         do
-          planfile_name=$(basename $planfile)
+          planfile_name=$(echo ${planfile##*/})
           planfile_path=$(dirname $planfile)
           terraform_bin="terraform"
           tfplan_json="${planfile_path}"/tfplan.json
