@@ -117,7 +117,7 @@ jobs:
             terraform plan
 ```
 
-### Run terraform and create pr comment for plan
+### Run terraform and create pr comment for plan on pull_request
 
 ```yaml
       - name: run terraform
@@ -128,7 +128,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
-          enable-terraform-change-pr-commenter: true
+          enable-terraform-change-pr-commenter: ${{ github.event_name == 'pull_request' }}
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terraform init
