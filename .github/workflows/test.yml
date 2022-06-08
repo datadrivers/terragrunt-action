@@ -56,3 +56,22 @@ jobs:
             terragrunt run-all init
             terragrunt run-all providers lock
             terragrunt run-all plan
+  test-terragrunt-pr-comment-noplan:
+    name: TF code in examples/test-pr-comment-terragrunt
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt-noplan
+          skip-caches: true
+          use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
+          terragrunt-command: |
+            terragrunt run-all init
+            terragrunt run-all providers lock
+            terragrunt run-all plan
