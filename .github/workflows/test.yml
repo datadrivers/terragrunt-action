@@ -77,4 +77,4 @@ jobs:
             terragrunt run-all init
             terragrunt run-all providers lock
             terragrunt run-all plan
-          # enable-debug: true # for prod use false here
+          enable-debug: true # for prod use false here
