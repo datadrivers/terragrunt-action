@@ -174,7 +174,7 @@ runs:
           tfplan_json=$(readlink -f "${planfile_path}/tfplan.json")
           cd "${planfile_path}"
           test -s terragrunt.hcl && terraform_bin="terragrunt" || true
-          $terraform_bin show -no-color -json -error "${planfile_name}" > "${tfplan_json}"
+          $terraform_bin show -no-color -json "${planfile_name}" > "${tfplan_json}"
           echo ${tfplan_json}
           cd -
         };
