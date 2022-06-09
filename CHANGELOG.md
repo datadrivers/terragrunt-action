@@ -1,3 +1,9 @@
+## v0.6.0 (2022-06-09)
+
+### Feat
+
+- speed up convert of plans (#6)
+
 ## v0.5.0 (2022-06-08)
 
 ### Feat
