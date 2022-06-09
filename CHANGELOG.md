@@ -1,3 +1,9 @@
+## v0.6.1 (2022-06-09)
+
+### Fix
+
+- **pr-commenter**: commenter doesn't fail on empty changes (#8)
+
 ## v0.6.0 (2022-06-09)
 
 ### Feat
