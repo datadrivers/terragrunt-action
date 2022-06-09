@@ -58,8 +58,8 @@ jobs:
             terragrunt run-all providers lock
             terragrunt run-all plan
           # enable-debug: true # for prod use false here
-  test-terragrunt-pr-comment-noplan:
-    name: TF code in examples/test-pr-comment-terragrunt-noplan
+  test-terragrunt-pr-comment-no-plan:
+    name: TF code in examples/test-pr-comment-terragrunt-no-plan
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -68,7 +68,7 @@ jobs:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-noplan
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-plan
           skip-caches: true
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
@@ -78,8 +78,8 @@ jobs:
             terragrunt run-all providers lock
             terragrunt run-all plan
           enable-debug: true # for prod use false here
-  test-terragrunt-pr-comment-nochange:
-    name: TF code in examples/test-pr-comment-terragrunt-nochange
+  test-terragrunt-pr-comment-no-change:
+    name: TF code in examples/test-pr-comment-terragrunt-no-change
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -88,7 +88,7 @@ jobs:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-nochange
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-change
           skip-caches: true
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
