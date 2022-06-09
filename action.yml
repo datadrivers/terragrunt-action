@@ -161,12 +161,15 @@ runs:
       shell: bash
       id: tf-planfiles
       run: |
+        test $ACT=true && apt-get update && apt-get install parallel -y # on act runner parallel is missing
         echo "::group::convert terraform plan files to json"
         set -e
         [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
         planfiles_json=()
         tf_convert_plan_to_json(){
           [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
+          exec 3>&1
+          exec 1>&2
           set -e
           local planfile=$1
           planfile_name=$(echo ${planfile##*/})
@@ -176,11 +179,11 @@ runs:
           cd "${planfile_path}"
           test -s terragrunt.hcl && terraform_bin="terragrunt" || true
           $terraform_bin show -no-color -json "${planfile_name}" > "${tfplan_json}"
-          echo ${tfplan_json}
-          cd -
+          echo ${tfplan_json} >&3
+          cd - &>/dev/null
         };
         export -f tf_convert_plan_to_json
-        mapfile -t planfiles_json < <( find . -type f -name ${{ inputs.terraform-plan-filename }} | parallel 'tf_convert_plan_to_json {}')
+        mapfile -t planfiles_json < <( find . -type f -name ${{ inputs.terraform-plan-filename }} | parallel 'tf_convert_plan_to_json {}' )
         content=$(printf "%s\n" "${planfiles_json[@]}")
         content="${content//'%'/'%25'}"
         content="${content//$'\n'/'%0A'}"
