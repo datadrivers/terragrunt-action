@@ -1,0 +1,8 @@
+# This is a comment.
+# Each line is a file pattern followed by one or more owners. Also email address is possible, if user added it in his profile.
+# Order is important; the last matching pattern takes the most
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# review when someone opens a pull request.
+*               steffen.tautenhahn@datadrivers.de andre.moeller@datadrivers.de
