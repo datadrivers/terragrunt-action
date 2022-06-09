@@ -161,6 +161,7 @@ runs:
       shell: bash
       id: tf-planfiles
       run: |
+        echo "::group::convert terraform plan files to json"
         set -e
         [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
         planfiles_json=()
