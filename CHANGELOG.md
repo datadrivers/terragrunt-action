@@ -1,3 +1,9 @@
+## v0.7.0 (2022-06-15)
+
+### Feat
+
+- **self-hosted**: clean up cache dirs
+
 ## v0.6.1 (2022-06-09)
 
 ### Fix
