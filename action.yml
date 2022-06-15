@@ -117,6 +117,9 @@ runs:
         TERRAGRUNT_DOWNLOAD="$HOME/.terragrunt-cache/${{ inputs.terragrunt-download-cache-target }}"
         echo "TERRAGRUNT_DOWNLOAD=$TERRAGRUNT_DOWNLOAD" >> $GITHUB_ENV
         mkdir --parents $TERRAGRUNT_DOWNLOAD
+        # clean up to make sure self-hosted runner dirs are clean
+        shopt -s dotglob
+        cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v3
