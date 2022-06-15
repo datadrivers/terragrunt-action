@@ -120,6 +120,14 @@ runs:
         # clean up to make sure self-hosted runner dirs are clean
         shopt -s dotglob
         cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
+    - uses: webiny/action-post-run@2.0.1
+      if: inputs.skip-caches == 'false'
+      id: clean-up-cache
+      with:
+        run: |
+          shopt -s dotglob
+          cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
+          cd "${TF_PLUGIN_CACHE_DIR:?}" && rm -rf *
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v3
@@ -164,7 +172,7 @@ runs:
       shell: bash
       id: tf-planfiles
       run: |
-        [[ "$ACT" == "true" ]] && apt-get update && apt-get install parallel -y # on act runner parallel is missing
+        command -v parallel || apt-get update && apt-get install parallel -y # on act runner parallel is missing
         echo "::group::convert terraform plan files to json"
         set -e
         [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
