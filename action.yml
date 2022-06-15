@@ -124,10 +124,7 @@ runs:
       if: inputs.skip-caches == 'false'
       id: clean-up-cache
       with:
-        run: |
-          shopt -s dotglob
-          cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
-          cd "${TF_PLUGIN_CACHE_DIR:?}" && rm -rf *
+        run: bash -c 'shopt -s dotglob; cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *; cd "${TF_PLUGIN_CACHE_DIR:?}" && rm -rf *'
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v3
