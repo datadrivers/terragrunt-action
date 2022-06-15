@@ -50,6 +50,7 @@ jobs:
           use-aws-auth: false
           terragrunt-working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
+          terragrunt-download-cache-target: ${{ github.job }}
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
           terraform-plan-filename: terraform.tfplan
@@ -70,6 +71,7 @@ jobs:
           use-aws-auth: false
           terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-plan
           skip-caches: false
+          terragrunt-download-cache-target: ${{ github.job }}
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
           terraform-plan-filename: terraform.tfplan
