@@ -120,11 +120,6 @@ runs:
         # clean up to make sure self-hosted runner dirs are clean
         shopt -s dotglob
         cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
-    - uses: webiny/action-post-run@2.0.1
-      if: inputs.skip-caches == 'false'
-      id: clean-up-cache
-      with:
-        run: bash -c 'shopt -s dotglob; cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *; cd "${TF_PLUGIN_CACHE_DIR:?}" && rm -rf *'
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v3
