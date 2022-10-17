@@ -1,3 +1,9 @@
+## v0.7.1 (2022-10-17)
+
+### Fix
+
+- remove deprecated set-output call
+
 ## v0.7.0 (2022-06-15)
 
 ### Feat
