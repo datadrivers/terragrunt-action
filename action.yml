@@ -187,11 +187,13 @@ runs:
         };
         export -f tf_convert_plan_to_json
         mapfile -t planfiles_json < <( find . -type f -name ${{ inputs.terraform-plan-filename }} | parallel 'tf_convert_plan_to_json {}' )
-        delimiter="$(openssl rand -hex 8)"
         content=$(printf "%s\n" "${planfiles_json[@]}")
-        echo "terraform_planfiles_json=${delimiter}" >> $GITHUB_OUTPUT
-        echo "${content}" >> $GITHUB_OUTPUT
-        echo "${delimiter}" >> $GITHUB_OUTPUT
+        if [[ -n "${content}" ]]; then
+          delimiter="$(openssl rand -hex 8)"
+          echo "terraform_planfiles_json=${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "${content}" >> "${GITHUB_OUTPUT}"
+          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
+        fi
         echo "::endgroup::"
     - name: Add PR comment for terraform plan changes
       if: inputs.enable-terraform-change-pr-commenter == 'true' && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
