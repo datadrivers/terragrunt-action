@@ -191,7 +191,7 @@ runs:
         content="${content//'%'/'%25'}"
         content="${content//$'\n'/'%0A'}"
         content="${content//$'\r'/'%0D'}"
-        echo "::set-output name=terraform_planfiles_json::${content}"
+        echo "terraform_planfiles_json=${content}" >> $GITHUB_OUTPUT
         echo "::endgroup::"
     - name: Add PR comment for terraform plan changes
       if: inputs.enable-terraform-change-pr-commenter == 'true' && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
