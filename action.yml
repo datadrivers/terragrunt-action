@@ -190,7 +190,7 @@ runs:
         content=$(printf "%s\n" "${planfiles_json[@]}")
         if [[ -n "${content}" ]]; then
           delimiter="$(openssl rand -hex 8)"
-          echo "terraform_planfiles_json=${delimiter}" >> "${GITHUB_OUTPUT}"
+          echo "terraform_planfiles_json<<${delimiter}" >> "${GITHUB_OUTPUT}"
           echo "${content}" >> "${GITHUB_OUTPUT}"
           echo "${delimiter}" >> "${GITHUB_OUTPUT}"
         fi
