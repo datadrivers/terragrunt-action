@@ -37,7 +37,7 @@ jobs:
             terraform init
             terraform providers lock
             terraform plan -out terraform.tfplan # we need to make sure
-          # enable-debug: true # for prod use false here
+          enable-debug: true # for prod use false here
   test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-20.04
@@ -58,7 +58,7 @@ jobs:
             terragrunt run-all init
             terragrunt run-all providers lock
             terragrunt run-all plan
-          # enable-debug: true # for prod use false here
+          enable-debug: true # for prod use false here
   test-terragrunt-pr-comment-no-plan:
     name: TF code in examples/test-pr-comment-terragrunt-no-plan
     runs-on: ubuntu-20.04
