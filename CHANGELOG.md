@@ -1,3 +1,9 @@
+## v0.7.2 (2022-10-17)
+
+### Fix
+
+- need rng delimiter for multiline output (#12)
+
 ## v0.7.1 (2022-10-17)
 
 ### Fix
