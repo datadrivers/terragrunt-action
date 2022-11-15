@@ -1,3 +1,9 @@
+## v0.8.0 (2022-11-15)
+
+### Feat
+
+- **gcloud-auth**: use latest version
+
 ## v0.7.4 (2022-11-09)
 
 ### Fix
