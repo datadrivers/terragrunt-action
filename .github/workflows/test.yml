@@ -114,6 +114,7 @@ jobs:
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
           use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
           include-plan-job-summary: true
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
