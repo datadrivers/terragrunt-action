@@ -1,3 +1,10 @@
+## v0.9.0 (2023-01-13)
+
+### Feat
+
+- terragrunt cache dir and job summary (#16)
+- **gcloud-auth**: use latest version
+
 ## v0.8.0 (2022-11-15)
 
 ### Feat
