@@ -32,7 +32,6 @@ jobs:
           skip-caches: true
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
-          include-plan-job-summary: false
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terraform init
@@ -101,8 +100,8 @@ jobs:
             terragrunt run-all providers lock
             terragrunt run-all plan
           enable-debug: true # for prod use false here
-  test-terragrunt-pr-comment-with-summary:
-    name: TF code in examples/test-pr-comment-terragrunt-with-summary
+  test-terragrunt-pr-comment-with-no-summary:
+    name: TF code in examples/test-pr-comment-terragrunt-with-no-summary
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -111,11 +110,12 @@ jobs:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-with-summary
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt-with-no-summary
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
+          include-plan-job-summary: false
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terragrunt run-all init
