@@ -110,7 +110,7 @@ jobs:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt
+          terragrunt-working-directory: examples/test-pr-comment-terragrunt-with-summary
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
           use-ssh-agent: false
