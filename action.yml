@@ -23,7 +23,7 @@ inputs:
   include-plan-job-summary:
     description: "If true, add the results of the plan to the workflow job summary."
     required: false
-    default: "false"
+    default: "true"
   terragrunt-version:
     description: "terragrunt version to setup. A version is required to install terragrunt binarys"
     required: false
@@ -205,7 +205,7 @@ runs:
         fi
         echo "::endgroup::"
     - name: Add PR comment for terraform plan changes
-      if: (inputs.enable-terraform-change-pr-commenter == 'true' || inputs.include-plan-job-summary == 'true') && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
+      if: inputs.enable-terraform-change-pr-commenter == 'true' && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
       uses: liatrio/terraform-change-pr-commenter@v1.4.1
       continue-on-error: true
       with:

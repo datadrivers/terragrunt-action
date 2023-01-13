@@ -32,6 +32,7 @@ jobs:
           skip-caches: true
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
+          include-plan-job-summary: false
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terraform init
@@ -115,7 +116,6 @@ jobs:
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
-          include-plan-job-summary: true
           terraform-plan-filename: terraform.tfplan
           terragrunt-command: |
             terragrunt run-all init
