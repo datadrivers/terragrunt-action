@@ -1,3 +1,9 @@
+## v0.10.0 (2023-01-24)
+
+### Feat
+
+- **terragrunt**: use token for higher api rate limits (#17)
+
 ## v0.9.0 (2023-01-13)
 
 ### Feat
