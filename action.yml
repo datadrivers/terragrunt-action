@@ -100,6 +100,9 @@ inputs:
     description: "Add debug output to steps"
     required: false
     default: "false"
+  github-token:
+    description: 'Github token to use for getting latest release'
+    required: false
 
 runs:
   using: "composite"
@@ -112,10 +115,11 @@ runs:
         terraform_version: ${{ inputs.terraform-version }}
         terraform_wrapper: false
     - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v1.2.0
+      uses: autero1/action-terragrunt@v1.3.0
       if: inputs.terragrunt-version != 'disabled'
       with:
         terragrunt_version: ${{ inputs.terragrunt-version }}
+        token: ${{ inputs.github-token}}
     - name: Config caches
       if: inputs.skip-caches == 'false'
       shell: bash
