@@ -46,6 +46,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: false
