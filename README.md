@@ -2,6 +2,34 @@
 
 ## Examples
 
+### Run terraform without terragrunt
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform-validate:
+    name: TF code in project-dev
+    runs-on: ubuntu-22.04
+    steps:
+      - name: run terraform
+        uses: datadrivers/terragrunt-action@v0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          use-aws-auth: "true"
+          aws-region: ${{ env.AWS_REGION }}
+          aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          skip-caches: "false"
+          use-ssh-agent: "true"
+          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+          terragrunt-command: |
+            terraform plan
+```
+
 ### Complete workflow with custom scripts to run terraform plan via terragrunt
 
 ```yaml
@@ -36,7 +64,7 @@ permissions:
 jobs:
   terraform-validate:
     name: TF code in project-dev
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Set terra*_version variables from files
@@ -98,23 +126,6 @@ jobs:
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           terragrunt-command: |
             terragrunt run-all plan
-```
-
-### Run terraform without terragrunt
-
-```yaml
-      - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
-        with:
-          terraform-version: ${{ env.TERRAFORM_VERSION }}
-          use-aws-auth: "true"
-          aws-region: ${{ env.AWS_REGION }}
-          aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          skip-caches: "false"
-          use-ssh-agent: "true"
-          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          terragrunt-command: |
-            terraform plan
 ```
 
 ### Run terraform and create pr comment for plan on pull_request
