@@ -1,3 +1,9 @@
+## v0.10.1 (2023-02-13)
+
+### Fix
+
+- nodejs deprecation warning
+
 ## v0.10.0 (2023-01-24)
 
 ### Feat
