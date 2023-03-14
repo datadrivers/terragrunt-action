@@ -1,3 +1,9 @@
+## v0.10.2 (2023-03-14)
+
+### Fix
+
+- use latest aws auth action
+
 ## v0.10.1 (2023-02-13)
 
 ### Fix
