@@ -115,7 +115,7 @@ runs:
         terraform_version: ${{ inputs.terraform-version }}
         terraform_wrapper: false
     - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v1.3.0
+      uses: autero1/action-terragrunt@v1.3.2
       if: inputs.terragrunt-version != 'disabled'
       with:
         terragrunt_version: ${{ inputs.terragrunt-version }}
@@ -158,14 +158,14 @@ runs:
     - id: "aws-auth"
       if: inputs.use-aws-auth == 'true'
       name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v3
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.aws-role-to-assume }}
         role-duration-seconds: ${{ inputs.aws-role-duration-seconds }}
     - name: Setup SSH agent
       if: inputs.use-ssh-agent == 'true'
-      uses: webfactory/ssh-agent@v0.7.0
+      uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ inputs.ssh-private-key }}
     - name: Run Terraform
