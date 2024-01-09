@@ -124,3 +124,24 @@ jobs:
             terragrunt run-all providers lock
             terragrunt run-all plan
           enable-debug: true # for prod use false here
+  test-terraform-pr-comment-with-binary-detection-override:
+    name: TF code in examples/test-pr-comment
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          use-aws-auth: false
+          terragrunt-working-directory: examples/test-pr-comment-with-binary-detection-override
+          skip-caches: true
+          use-ssh-agent: false
+          enable-terraform-change-pr-commenter: true
+          terraform-plan-filename: terraform.tfplan
+          use-automatic-binary-detection: false
+          terragrunt-command: |
+            terraform init
+            terraform providers lock
+            terraform plan -out terraform.tfplan # we need to make sure
+          enable-debug: true # for prod use false here

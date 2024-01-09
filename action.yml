@@ -103,6 +103,10 @@ inputs:
   github-token:
     description: 'Github token to use for getting latest release'
     required: false
+  use-automatic-binary-detection:
+    description: 'This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used'
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -193,7 +197,7 @@ runs:
           terraform_bin="terraform"
           tfplan_json=$(readlink -f "${planfile_path}/tfplan.json")
           cd "${planfile_path}"
-          test -s terragrunt.hcl && terraform_bin="terragrunt" || true
+          [[ "${{ inputs.use-automatic-binary-detection == 'true' }}" == "true" ]] && test -s terragrunt.hcl && terraform_bin="terragrunt" || true
           $terraform_bin show -no-color -json "${planfile_name}" > "${tfplan_json}"
           echo ${tfplan_json} >&3
           cd - &>/dev/null
