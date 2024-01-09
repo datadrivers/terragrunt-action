@@ -125,7 +125,7 @@ jobs:
             terragrunt run-all plan
           enable-debug: true # for prod use false here
   test-terraform-pr-comment-with-binary-detection-override:
-    name: TF code in examples/test-pr-comment
+    name: TF code in examples/test-pr-comment-with-binary-detection-override
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
