@@ -1,3 +1,9 @@
+## v0.11.0 (2024-01-10)
+
+### Feat
+
+- add toggle to disable automatic binary detection (#23)
+
 ## v0.10.3 (2023-08-24)
 
 ### Fix
