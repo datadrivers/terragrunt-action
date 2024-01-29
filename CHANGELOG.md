@@ -1,3 +1,9 @@
+## v0.11.1 (2024-01-29)
+
+### Fix
+
+- upgrade action versions
+
 ## v0.11.0 (2024-01-10)
 
 ### Feat
