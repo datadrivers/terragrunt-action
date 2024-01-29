@@ -113,7 +113,7 @@ runs:
   steps:
     # Setup terraform
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       if: inputs.terraform-version != 'disabled'
       with:
         terraform_version: ${{ inputs.terraform-version }}
@@ -139,14 +139,14 @@ runs:
         cd "${TERRAGRUNT_DOWNLOAD:?}" && rm -rf *
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.terraform.d/plugin-cache
         key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
     - name: Cache Terragrunt
       if: inputs.skip-caches == 'false'
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ env.TERRAGRUNT_DOWNLOAD }}
@@ -154,7 +154,7 @@ runs:
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
-      uses: "google-github-actions/auth@v1"
+      uses: "google-github-actions/auth@v2"
       with:
         project_id: ${{ inputs.gcp-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
@@ -162,7 +162,7 @@ runs:
     - id: "aws-auth"
       if: inputs.use-aws-auth == 'true'
       name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v3
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.aws-role-to-assume }}
