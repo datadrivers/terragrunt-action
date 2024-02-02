@@ -1,3 +1,15 @@
+## v0.11.2 (2024-02-02)
+
+### Fix
+
+- nodejs update
+
+## v0 (2024-01-29)
+
+### Fix
+
+- upgrade action versions
+
 ## v0.11.1 (2024-01-29)
 
 ### Fix
