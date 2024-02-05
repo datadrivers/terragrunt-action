@@ -214,7 +214,7 @@ runs:
         echo "::endgroup::"
     - name: Add PR comment for terraform plan changes
       if: inputs.enable-terraform-change-pr-commenter == 'true' && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
-      uses: liatrio/terraform-change-pr-commenter@v1.4.2
+      uses: liatrio/terraform-change-pr-commenter@v1.4.5
       continue-on-error: true
       with:
         include-plan-job-summary: ${{ inputs.include-plan-job-summary }}
