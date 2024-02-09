@@ -5,7 +5,6 @@
 
 version: 2
 updates:
-  # group minor/patch updates for github actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -18,29 +17,13 @@ updates:
       prefix: "chore"
       include: "scope"
     groups:
+      # group minor/patch updates for github actions
       github-actions:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
-  # no groups for major updates for github actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    reviewers:
-      - "@datadrivers/cc-ICAS"
-    labels:
-      - "gh-actions"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - version-update:semver-minor
-          - version-update:semver-patch
   - package-ecosystem: "terraform"
     directory: "/"
     schedule:
