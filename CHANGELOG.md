@@ -1,3 +1,21 @@
+## v1.0.0 (2024-02-09)
+
+### BREAKING CHANGE
+
+- `terragrunt-command` is renamed to `commands`
+- removed parameter `terragrunt-download-cache-target` which is
+replaced by `terragrunt-download`
+
+### Feat
+
+- renamed parameter for commands
+
+## v0 (2024-02-09)
+
+### Feat
+
+- upgrade nodejs actions
+
 ## v0.12.0 (2024-02-09)
 
 ### Feat
