@@ -1,3 +1,9 @@
+## v0.12.0 (2024-02-09)
+
+### Feat
+
+- upgrade nodejs actions
+
 ## v0.11.3 (2024-02-05)
 
 ### Fix
