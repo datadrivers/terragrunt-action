@@ -32,8 +32,8 @@ inputs:
     description: "working-directory for github step to run terragrunt/terraform command"
     required: false
     default: "."
-  terragrunt-command:
-    description: "terragrunt execution line. For multiple commands use | syntax"
+  commands:
+    description: "terraform execution line. For multiple commands use | multi line syntax"
     required: true
   use-aws-auth:
     description: "Toggle to log in to aws"
@@ -79,11 +79,6 @@ inputs:
     description: "path to terragrunt cache dir storage"
     required: false
     default: "$HOME/.terragrunt-cache/"
-  terragrunt-download-cache-target:
-    description: "Helper to differ terragrunt cache dirs from other runs. Useful if remote state configs (terraform code) rely on environment variables"
-    required: false
-    deprecationMessage: "This parameter is replaced by terragrunt-download, where you can configure full path"
-    default: ""
   skip-caches:
     description: "Toggle to skip caches"
     required: false
@@ -126,12 +121,14 @@ runs:
         token: ${{ inputs.github-token}}
     - name: Config caches
       if: inputs.skip-caches == 'false'
+      env:
+        INPUT_TERRAGRUNT_DOWNLOAD: ${{ inputs.terragrunt-download }}
       shell: bash
       run: |
         TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
         echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_ENV
         mkdir --parents $TF_PLUGIN_CACHE_DIR
-        TERRAGRUNT_DOWNLOAD="${{ inputs.terragrunt-download }}${{ inputs.terragrunt-download-cache-target }}"
+        TERRAGRUNT_DOWNLOAD=${INPUT_TERRAGRUNT_DOWNLOAD//\$HOME/$HOME} # make sure $HOME is expanded
         echo "TERRAGRUNT_DOWNLOAD=$TERRAGRUNT_DOWNLOAD" >> $GITHUB_ENV
         mkdir --parents $TERRAGRUNT_DOWNLOAD
         # clean up to make sure self-hosted runner dirs are clean
@@ -175,19 +172,23 @@ runs:
     - name: Run Terraform
       shell: bash
       working-directory: ${{ inputs.terragrunt-working-directory }}
-      run: ${{ inputs.terragrunt-command }}
+      run: ${{ inputs.commands }}
     - name: Convert terraform plan files to json
       if: inputs.enable-terraform-change-pr-commenter == 'true'
+      env:
+        INPUT_TERRAFORM_PLAN_FILENAME: ${{ inputs.terraform-plan-filename }}
+        INPUT_USE_AUTOMATIC_BINARY_DETECTION: ${{ inputs.use-automatic-binary-detection }}
+        INPUT_ENABLE_DEBUG: ${{ inputs.enable-debug }}
       shell: bash
       id: tf-planfiles
       run: |
         echo "::group::convert terraform plan files to json"
         [[ "$ACT" == "true" ]] && apt-get update && apt-get install parallel -y # on act runner parallel is missing
         set -e
-        [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
+        [[ "${INPUT_ENABLE_DEBUG}" == "true" ]] && set -x
         planfiles_json=()
         tf_convert_plan_to_json(){
-          [[ "${{ inputs.enable-debug == 'true' }}" == "true" ]] && set -x
+          [[ "${INPUT_ENABLE_DEBUG}" == "true" ]] && set -x
           exec 3>&1
           exec 1>&2
           set -e
@@ -197,13 +198,13 @@ runs:
           terraform_bin="terraform"
           tfplan_json=$(readlink -f "${planfile_path}/tfplan.json")
           cd "${planfile_path}"
-          [[ "${{ inputs.use-automatic-binary-detection == 'true' }}" == "true" ]] && test -s terragrunt.hcl && terraform_bin="terragrunt" || true
+          [[ "${INPUT_USE_AUTOMATIC_BINARY_DETECTION}" == "true" ]] && test -s terragrunt.hcl && terraform_bin="terragrunt" || true
           $terraform_bin show -no-color -json "${planfile_name}" > "${tfplan_json}"
           echo ${tfplan_json} >&3
           cd - &>/dev/null
         };
         export -f tf_convert_plan_to_json
-        mapfile -t planfiles_json < <( find . -type f -name ${{ inputs.terraform-plan-filename }} | parallel 'tf_convert_plan_to_json {}' )
+        mapfile -t planfiles_json < <( find . -type f -name ${INPUT_TERRAFORM_PLAN_FILENAME} | parallel 'tf_convert_plan_to_json {}' )
         content=$(printf "%s\n" "${planfiles_json[@]}")
         if [[ -n "${content}" ]]; then
           delimiter="$(openssl rand -hex 8)"

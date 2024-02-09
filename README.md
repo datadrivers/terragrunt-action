@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
+        uses: datadrivers/terragrunt-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           terraform-version: ${{ env.TERRAFORM_VERSION }}
@@ -24,9 +24,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
-          use-ssh-agent: "true"
-          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          terragrunt-command: |
+          commands: |
             terraform plan
 ```
 
@@ -53,7 +51,7 @@ env:
   AWS_REGION: "eu-central-1"
   ACCOUNT: project-dev
   CONFIG_PATH: terraform/project                            # used in costum scripts
-  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TERRAFORM_DEV }}
+  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TERRAFORM }}
   TERRAGRUNT_PARALLELISM: 4                                 # limit CPU usage
 
 permissions:
@@ -74,18 +72,18 @@ jobs:
           echo "TERRAFORM_VERSION=$TF_VER" >> $GITHUB_ENV
           echo "TERRAGRUNT_VERSION=$TG_VER" >> $GITHUB_ENV
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
+        uses: datadrivers/terragrunt-action@v1
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          terragrunt-download-cache-target: ${{ env.ACCOUNT }}
+          terragrunt-download: "$HOME/.terragrunt-cache/${{ env.ACCOUNT }}"
           skip-caches: "false"
           use-ssh-agent: "true"
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          terragrunt-command: |
+          commands: |
             scripts/terragrunt/init_terraform_plugins.sh
             scripts/terragrunt/run_terragrunt run-all plan -out terraform.tfplan
 ```
@@ -94,7 +92,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
+        uses: datadrivers/terragrunt-action@v1
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -104,7 +102,7 @@ jobs:
           skip-caches: "false"
           use-ssh-agent: "true"
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          terragrunt-command: |
+          commands: |
             terragrunt run-all validate
             terragrunt run-all plan
 ```
@@ -113,7 +111,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
+        uses: datadrivers/terragrunt-action@v1
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -124,7 +122,7 @@ jobs:
           skip-caches: "false"
           use-ssh-agent: "true"
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          terragrunt-command: |
+          commands: |
             terragrunt run-all plan
 ```
 
@@ -132,7 +130,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v0
+        uses: datadrivers/terragrunt-action@v1
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           use-aws-auth: "true"
@@ -141,7 +139,7 @@ jobs:
           skip-caches: "false"
           enable-terraform-change-pr-commenter: ${{ github.event_name == 'pull_request' }}
           terraform-plan-filename: terraform.tfplan
-          terragrunt-command: |
+          commands: |
             terraform init
             terraform plan -out terraform.tfplan
 ```
