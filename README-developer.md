@@ -1,6 +1,7 @@
 # Developer Guidelines
 
 - [Developer Guidelines](#developer-guidelines)
+  - [Contribute](#contribute)
   - [Create release](#create-release)
     - [semver release](#semver-release)
     - [Github market place release](#github-market-place-release)
@@ -45,6 +46,6 @@ make sure you have create a semver release before moving major version tag, sinc
 
 ```bash
 # we need force since we overwrite existing tag
-git tag v0 --force
+git tag v1 --force
 git push --tags --force
 ```
