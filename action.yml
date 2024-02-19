@@ -114,10 +114,10 @@ runs:
         terraform_version: ${{ inputs.terraform-version }}
         terraform_wrapper: false
     - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v1.3.2
+      uses: autero1/action-terragrunt@v3.0.1
       if: inputs.terragrunt-version != 'disabled'
       with:
-        terragrunt_version: ${{ inputs.terragrunt-version }}
+        terragrunt-version: ${{ inputs.terragrunt-version }}
         token: ${{ inputs.github-token}}
     - name: Config caches
       if: inputs.skip-caches == 'false'
