@@ -45,7 +45,8 @@ inputs:
     default: "eu-central-1"
   aws-role-to-assume:
     description: "AWS IAM Role for github action to access aws api"
-    required: true
+    required: false
+    default: ""
   aws-role-duration-seconds:
     description: "AWS session time"
     required: false
