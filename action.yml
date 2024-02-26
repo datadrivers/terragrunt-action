@@ -115,7 +115,7 @@ runs:
         terraform_version: ${{ inputs.terraform-version }}
         terraform_wrapper: false
     - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v3.0.1
+      uses: autero1/action-terragrunt@v3.0.2
       if: inputs.terragrunt-version != 'disabled'
       with:
         terragrunt-version: ${{ inputs.terragrunt-version }}
