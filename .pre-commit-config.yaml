@@ -15,6 +15,7 @@ repos:
     rev: v1.86.0
     hooks:
       - id: terraform_fmt
+      - id: terragrunt_fmt
       - id: terraform_docs_without_aggregate_type_defaults
         args:
           - --hook-config=--create-file-if-not-exist=true
