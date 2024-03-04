@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/datadrivers/terragrunt-action/compare/v1.1.1...v1.1.2) (2024-03-04)
+
+
+### Bug Fixes
+
+* trigger semantic release ([522e04c](https://github.com/datadrivers/terragrunt-action/commit/522e04cc528df9f38e6af63ac97883d6dc7fefd4))
+
 ## v1.1.1 (2024-02-23)
 
 ### Fix
