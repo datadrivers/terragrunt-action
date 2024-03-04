@@ -1,0 +1,40 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Release new version
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-22.04
+    if: github.ref_name == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+
+      - uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json', '.releaserc.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@61680d0e9b02ff86f5648ade99e01be17f0260a4 # v4.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/changelog
+            semantic-release-major-tag
+          dry_run: ${{ env.ACT }} == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

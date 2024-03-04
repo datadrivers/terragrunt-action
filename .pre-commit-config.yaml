@@ -5,7 +5,18 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.14.1
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
     hooks:
-      - id: commitizen
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.86.0
+    hooks:
+      - id: terraform_fmt
+      - id: terragrunt_fmt
+      - id: terraform_docs_without_aggregate_type_defaults
+        args:
+          - --hook-config=--create-file-if-not-exist=true
+          - --args=--lockfile=false # ignore .terraform.lock.hcl

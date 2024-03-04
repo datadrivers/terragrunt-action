@@ -13,5 +13,5 @@ terraform {
 }
 
 inputs = {
-    filename = "test1"
+  filename = "test1"
 }
