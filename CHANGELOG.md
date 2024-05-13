@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/datadrivers/terragrunt-action/compare/v1.1.2...v1.2.0) (2024-05-13)
+
+
+### Features
+
+* **deps:** bump liatrio/terraform-change-pr-commenter ([#33](https://github.com/datadrivers/terragrunt-action/issues/33)) ([6bb3c6d](https://github.com/datadrivers/terragrunt-action/commit/6bb3c6d43259d0a7493bd25b83218476167b0971))
+
 ## [1.1.2](https://github.com/datadrivers/terragrunt-action/compare/v1.1.1...v1.1.2) (2024-03-04)
 
 
