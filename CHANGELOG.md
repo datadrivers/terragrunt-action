@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/datadrivers/terragrunt-action/compare/v1.2.0...v1.3.0) (2024-07-10)
+
+
+### Features
+
+* **pr-commenter:** allow to overwrite comment header/footer ([#34](https://github.com/datadrivers/terragrunt-action/issues/34)) ([71ea252](https://github.com/datadrivers/terragrunt-action/commit/71ea25268ffdeed5e156031de987e696665fea3a))
+
 # [1.2.0](https://github.com/datadrivers/terragrunt-action/compare/v1.1.2...v1.2.0) (2024-05-13)
 
 
