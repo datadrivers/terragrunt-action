@@ -33,6 +33,7 @@ jobs:
           skip-caches: true
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true
+          pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment"
           terraform-plan-filename: terraform.tfplan
           commands: |
             terraform init
