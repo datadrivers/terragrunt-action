@@ -77,6 +77,7 @@ jobs:
           use-aws-auth: false
           terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-plan
           skip-caches: false
+          terragrunt-cache-extra-key: ${{ hashFiles('**/README.md') }}
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
           use-ssh-agent: false
           enable-terraform-change-pr-commenter: true

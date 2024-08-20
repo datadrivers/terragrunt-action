@@ -40,6 +40,10 @@ inputs:
     description: "working-directory for github step to run terragrunt/terraform command"
     required: false
     default: "."
+  terragrunt-cache-extra-key:
+    description: "string appended to terragrunt cache key "
+    required: false
+    default: ""
   commands:
     description: "terraform execution line. For multiple commands use | multi line syntax"
     required: true
@@ -150,13 +154,17 @@ runs:
         path: |
           ~/.terraform.d/plugin-cache
         key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+        restore-keys: |
+          ${{ runner.os }}-terraform-
     - name: Cache Terragrunt
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v4
       with:
         path: |
           ${{ env.TERRAGRUNT_DOWNLOAD }}
-        key: ${{ runner.os }}-${{ env.TERRAGRUNT_DOWNLOAD }}-${{ hashFiles('**/project.hcl', '**/.terraform.lock.hcl') }}
+        key: ${{ runner.os }}-${{ env.TERRAGRUNT_DOWNLOAD }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}${{ inputs.terragrunt-cache-extra-key }}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.TERRAGRUNT_DOWNLOAD }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
