@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/datadrivers/terragrunt-action/compare/v1.3.0...v1.4.0) (2024-08-20)
+
+
+### Features
+
+* improve cache hits ([#35](https://github.com/datadrivers/terragrunt-action/issues/35)) ([6d67c9b](https://github.com/datadrivers/terragrunt-action/commit/6d67c9b99e3970db926a89e8ed068815292b5bdc))
+
 # [1.3.0](https://github.com/datadrivers/terragrunt-action/compare/v1.2.0...v1.3.0) (2024-07-10)
 
 
