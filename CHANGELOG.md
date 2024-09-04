@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/datadrivers/terragrunt-action/compare/v1.4.0...v1.5.0) (2024-09-04)
+
+
+### Features
+
+* pr-commenter doesn't show json output in log ([0763f63](https://github.com/datadrivers/terragrunt-action/commit/0763f632b6a38f796d92f7d1acc05a292f556dc1))
+
 # [1.4.0](https://github.com/datadrivers/terragrunt-action/compare/v1.3.0...v1.4.0) (2024-08-20)
 
 
