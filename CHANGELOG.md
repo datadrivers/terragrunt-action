@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/datadrivers/terragrunt-action/compare/v1.5.1...v1.5.2) (2025-02-27)
+
+
+### Bug Fixes
+
+* versions.tf changes update plugin cache ([973bba7](https://github.com/datadrivers/terragrunt-action/commit/973bba7885588c16d5e4a41efc53d6afe20027eb))
+
 ## [1.5.1](https://github.com/datadrivers/terragrunt-action/compare/v1.5.0...v1.5.1) (2024-12-16)
 
 
