@@ -84,7 +84,7 @@ jobs:
           use-ssh-agent: "true"
           ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           commands: |
-            scripts/terragrunt/init_terraform_plugins.sh
+            scripts/terragrunt/run_terragrunt run-all init
             scripts/terragrunt/run_terragrunt run-all plan -out terraform.tfplan
 ```
 
