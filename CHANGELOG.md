@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/datadrivers/terragrunt-action/compare/v1.5.2...v1.5.3) (2025-03-24)
+
+
+### Bug Fixes
+
+* **deps:** bump the github-actions group across 1 directory with 2 updates ([#41](https://github.com/datadrivers/terragrunt-action/issues/41)) ([48fb17f](https://github.com/datadrivers/terragrunt-action/commit/48fb17f5cbfc7c40e5ccccf93714f11ebf65494a))
+
 ## [1.5.2](https://github.com/datadrivers/terragrunt-action/compare/v1.5.1...v1.5.2) (2025-02-27)
 
 
