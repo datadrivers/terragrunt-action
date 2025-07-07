@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/datadrivers/terragrunt-action/compare/v1.5.4...v1.6.0) (2025-07-07)
+
+
+### Features
+
+* **deps:** bump the github-actions group with 2 updates ([#46](https://github.com/datadrivers/terragrunt-action/issues/46)) ([4aa7c74](https://github.com/datadrivers/terragrunt-action/commit/4aa7c7433659a6e8edf507551be58c19d890b081))
+
 ## [1.5.4](https://github.com/datadrivers/terragrunt-action/compare/v1.5.3...v1.5.4) (2025-06-10)
 
 
