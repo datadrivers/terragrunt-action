@@ -23,7 +23,7 @@ jobs:
     name: TF code in examples/test-pr-comment
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,7 +45,7 @@ jobs:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -69,7 +69,7 @@ jobs:
     name: TF code in examples/test-pr-comment-terragrunt-no-plan
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
@@ -93,7 +93,7 @@ jobs:
     name: TF code in examples/test-pr-comment-terragrunt-no-change
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
@@ -115,7 +115,7 @@ jobs:
     name: TF code in examples/test-pr-comment-terragrunt-with-no-summary
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
@@ -139,7 +139,7 @@ jobs:
     name: TF code in examples/test-pr-comment-with-binary-detection-override
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
