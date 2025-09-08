@@ -168,7 +168,7 @@ runs:
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
-      uses: "google-github-actions/auth@v2"
+      uses: "google-github-actions/auth@v3"
       with:
         project_id: ${{ inputs.gcp-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
