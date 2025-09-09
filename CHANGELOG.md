@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/datadrivers/terragrunt-action/compare/v1.6.0...v1.7.0) (2025-09-09)
+
+
+### Features
+
+* release new version ([5b1773e](https://github.com/datadrivers/terragrunt-action/commit/5b1773e15be18252dc27ab30f24e4b9028697cad))
+
 # [1.6.0](https://github.com/datadrivers/terragrunt-action/compare/v1.5.4...v1.6.0) (2025-07-07)
 
 
