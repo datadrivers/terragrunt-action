@@ -133,12 +133,12 @@ runs:
         TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
         echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_ENV
         mkdir --parents $TF_PLUGIN_CACHE_DIR
-        TG_DOWNLOAD=${INPUT_TERRAGRUNT_DOWNLOAD//\$HOME/$HOME} # make sure $HOME is expanded
-        echo "TG_DOWNLOAD=$TG_DOWNLOAD" >> $GITHUB_ENV
-        mkdir --parents $TG_DOWNLOAD
+        TG_DOWNLOAD_DIR=${INPUT_TERRAGRUNT_DOWNLOAD//\$HOME/$HOME} # make sure $HOME is expanded
+        echo "TG_DOWNLOAD_DIR=$TG_DOWNLOAD_DIR" >> $GITHUB_ENV
+        mkdir --parents $TG_DOWNLOAD_DIR
         # clean up to make sure self-hosted runner dirs are clean
         shopt -s dotglob
-        cd "${TG_DOWNLOAD:?}" && rm -rf *
+        cd "${TG_DOWNLOAD_DIR:?}" && rm -rf *
     - name: Cache Terraform
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v4
@@ -153,10 +153,10 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ${{ env.TG_DOWNLOAD }}
-        key: ${{ runner.os }}-${{ env.TG_DOWNLOAD }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}${{ inputs.terragrunt-cache-extra-key }}
+          ${{ env.TG_DOWNLOAD_DIR }}
+        key: ${{ runner.os }}-${{ env.TG_DOWNLOAD_DIR }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}${{ inputs.terragrunt-cache-extra-key }}
         restore-keys: |
-          ${{ runner.os }}-${{ env.TG_DOWNLOAD }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}
+          ${{ runner.os }}-${{ env.TG_DOWNLOAD_DIR }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl') }}
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
