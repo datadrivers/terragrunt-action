@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/datadrivers/terragrunt-action/compare/v2.0.0...v2.0.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* **terragrunt:** fix ENV var name ([4280278](https://github.com/datadrivers/terragrunt-action/commit/42802783e65620a776341abe841eec0f9309d48e))
+
 # [2.0.0](https://github.com/datadrivers/terragrunt-action/compare/v1.7.0...v2.0.0) (2025-09-24)
 
 
