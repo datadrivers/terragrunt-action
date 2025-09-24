@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/datadrivers/terragrunt-action/compare/v1.7.0...v2.0.0) (2025-09-24)
+
+
+* feat!: remove ssh-agent ([62143ce](https://github.com/datadrivers/terragrunt-action/commit/62143ce38ccad02314616e4c106c51de415336d2))
+
+
+### BREAKING CHANGES
+
+* removed ssh-agent
+
+Signed-off-by: Steffen Tautenhahn <stevie-@users.noreply.github.com>
+
 # [1.7.0](https://github.com/datadrivers/terragrunt-action/compare/v1.6.0...v1.7.0) (2025-09-09)
 
 
