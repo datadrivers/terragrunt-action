@@ -81,8 +81,6 @@ jobs:
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           terragrunt-download: "$HOME/.terragrunt-cache/${{ env.ACCOUNT }}"
           skip-caches: "false"
-          use-ssh-agent: "true"
-          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           commands: |
             scripts/terragrunt/run_terragrunt run-all init
             scripts/terragrunt/run_terragrunt run-all plan -out terraform.tfplan
@@ -100,8 +98,6 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
-          use-ssh-agent: "true"
-          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           commands: |
             terragrunt run-all validate
             terragrunt run-all plan
@@ -120,8 +116,6 @@ jobs:
           gcp-service-account-email: "automation-github@project-id.iam.gserviceaccount.com"
           gcp-project-id: "123456789"
           skip-caches: "false"
-          use-ssh-agent: "true"
-          ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           commands: |
             terragrunt run-all plan
 ```
