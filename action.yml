@@ -9,7 +9,7 @@ branding:
 
 inputs:
   terraform-version:
-    description: "terraform version to setup. A version is required to install terraform binarys"
+    description: "terraform version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
     required: false
     default: "disabled"
   terraform-plan-filename:
@@ -32,8 +32,12 @@ inputs:
     description: "Footer for the PR comment"
     required: false
     default: ""
+  tenv-version:
+    description: "tenv version to setup."
+    required: false
+    default: "latest"
   terragrunt-version:
-    description: "terragrunt version to setup. A version is required to install terragrunt binarys"
+    description: "terragrunt version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terragrunt-version / .tool-versions)."
     required: false
     default: "disabled"
   terragrunt-working-directory:
@@ -101,29 +105,80 @@ inputs:
     required: false
     default: "false"
   github-token:
-    description: 'Github token to use for getting latest release'
+    description: "Github token to use for getting latest release"
     required: false
   use-automatic-binary-detection:
-    description: 'This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used'
+    description: "This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used"
     required: false
     default: "true"
 
 runs:
   using: "composite"
   steps:
-    # Setup terraform
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      if: inputs.terraform-version != 'disabled'
-      with:
-        terraform_version: ${{ inputs.terraform-version }}
-        terraform_wrapper: false
-    - name: Terragrunt Binary Installer Action
-      uses: autero1/action-terragrunt@v3.0.2
-      if: inputs.terragrunt-version != 'disabled'
-      with:
-        terragrunt-version: ${{ inputs.terragrunt-version }}
-        token: ${{ inputs.github-token}}
+    - name: Install tenv
+      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      shell: bash
+      env:
+        INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        # Determine version (supports 'latest' or explicit tag, with or without leading 'v')
+        if [[ "${INPUT_TENV_VERSION}" == "latest" ]]; then
+          echo "Resolving latest tenv release via GitHub API";
+          auth_header=()
+          if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
+            auth_header=( -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" )
+          fi
+          # Fetch latest tag
+          latest_json=$(curl -sSL "https://api.github.com/repos/tofuutils/tenv/releases/latest" "${auth_header[@]}")
+          TENV_VERSION=$(printf '%s' "$latest_json" | grep -E '"tag_name"' | head -1 | sed -E 's/.*"tag_name" *: *"([^"]+)".*/\1/')
+          [[ -z "${TENV_VERSION}" ]] && { echo "Failed to determine latest tenv version" >&2; exit 1; }
+        else
+          TENV_VERSION="${INPUT_TENV_VERSION}"
+        fi
+        # Detect architecture and map to DEB naming convention
+        ARCH="$(uname -m)"
+        case "$ARCH" in
+          x86_64) ARCH_DEB="amd64" ;;
+          aarch64 | arm64) ARCH_DEB="arm64" ;;
+          *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+        esac
+        DEB_FILE="tenv_${TENV_VERSION}_${ARCH_DEB}.deb"
+        DOWNLOAD_URL="https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/${DEB_FILE}"
+        echo "Installing tenv ${TENV_VERSION} from ${DOWNLOAD_URL}";
+        curl -fL -o "${DEB_FILE}" "${DOWNLOAD_URL}" || { echo "Download failed" >&2; exit 1; }
+        if command -v sudo >/dev/null 2>&1; then
+          sudo dpkg -i "${DEB_FILE}"
+        else
+          dpkg -i "${DEB_FILE}"
+        fi
+    - name: Install requested tools (terraform/terragrunt)
+      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      shell: bash
+      working-directory: ${{ inputs.terragrunt-working-directory }}
+      run: |
+        tf_ver="${{ inputs.terraform-version }}"
+        tg_ver="${{ inputs.terragrunt-version }}"
+
+        # Terraform install logic
+        if [[ "${tf_ver}" != "disabled" ]]; then
+          if [[ -z "${tf_ver}" ]]; then
+            export TENV_AUTO_INSTALL=true
+            tenv tf install
+          else
+            tenv tf install "${tf_ver}"
+          fi
+        fi
+
+        # Terragrunt install logic
+        if [[ "${tg_ver}" != "disabled" ]]; then
+          if [[ -z "${tg_ver}" ]]; then
+            export TENV_AUTO_INSTALL=true
+            tenv tg install
+          else
+            tenv tg install "${tg_ver}"
+          fi
+        fi
     - name: Config caches
       if: inputs.skip-caches == 'false'
       env:
