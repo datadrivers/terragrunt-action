@@ -27,6 +27,7 @@ jobs:
     name: TF run
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v5
       - name: run terraform
         uses: datadrivers/terragrunt-action@v1
         with:
@@ -77,7 +78,7 @@ jobs:
     name: TF code in project-dev
     runs-on: ubuntu-24.04
     steps:
-  - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
       - name: Set terra*_version variables from files
         run: |
           TF_VER=$(cat .terraform-version)
