@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/datadrivers/terragrunt-action/compare/v2.0.1...v2.1.0) (2025-10-03)
+
+
+### Features
+
+* **setup:** introduce tenv as version manager ([f42610e](https://github.com/datadrivers/terragrunt-action/commit/f42610eb46d2884645815db329e0265da206ca02))
+
 ## [2.0.1](https://github.com/datadrivers/terragrunt-action/compare/v2.0.0...v2.0.1) (2025-09-24)
 
 
