@@ -130,7 +130,7 @@ runs:
             auth_header=( -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" )
           fi
           # Fetch latest tag
-          latest_json=$(curl -sSL "https://api.github.com/repos/tofuutils/tenv/releases/latest" "${auth_header[@]}")
+          latest_json=$(curl --retry 3 -sSL "https://api.github.com/repos/tofuutils/tenv/releases/latest" "${auth_header[@]}")
           TENV_VERSION=$(printf '%s' "$latest_json" | grep -E '"tag_name"' | head -1 | sed -E 's/.*"tag_name" *: *"([^"]+)".*/\1/')
           [[ -z "${TENV_VERSION}" ]] && { echo "Failed to determine latest tenv version" >&2; exit 1; }
         else
@@ -146,7 +146,7 @@ runs:
         DEB_FILE="tenv_${TENV_VERSION}_${ARCH_DEB}.deb"
         DOWNLOAD_URL="https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/${DEB_FILE}"
         echo "Installing tenv ${TENV_VERSION} from ${DOWNLOAD_URL}";
-        curl -fL -o "${DEB_FILE}" "${DOWNLOAD_URL}" || { echo "Download failed" >&2; exit 1; }
+        curl --retry 3 -fL -o "${DEB_FILE}" "${DOWNLOAD_URL}" || { echo "Download failed" >&2; exit 1; }
         if command -v sudo >/dev/null 2>&1; then
           sudo dpkg -i "${DEB_FILE}"
         else
