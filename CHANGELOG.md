@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/datadrivers/terragrunt-action/compare/v2.1.0...v2.1.1) (2025-10-17)
+
+
+### Bug Fixes
+
+* parallel runs may cause the api to rate limit ([81b30b9](https://github.com/datadrivers/terragrunt-action/commit/81b30b96cd1556a94ca0edfc422f16a6f6d52ef4))
+
 # [2.1.0](https://github.com/datadrivers/terragrunt-action/compare/v2.0.1...v2.1.0) (2025-10-03)
 
 
