@@ -37,6 +37,7 @@ jobs:
           aws-region: ${{ var.AWS_REGION }}
           aws-role-to-assume: ${{ var.AWS_ROLE_TO_ASSUME }}
           skip-caches: "false"
+          cache-tenv-tools: "true" # optional, default true
           terraform-working-directory: "terraform/"  # optional, defaults to root of repo
           commands: |
             terraform plan
@@ -151,3 +152,30 @@ jobs:
             terraform init
             terraform plan -out terraform.tfplan
 ```
+
+## tenv tool version caching
+
+To avoid downloading the same Terraform / Terragrunt / OpenTofu versions on every workflow run you can enable caching of tenv managed tool directories. This is on by default.
+
+Input: `cache-tenv-tools` (default `true`). Set to `false` to skip caching.
+
+What is cached:
+
+```text
+~/.tenv/Terraform
+~/.tenv/Terragrunt
+~/.tenv/OpenTofu
+```
+
+Cache key components:
+
+* OS (`runner.os`)
+* Hash of local version indicator files (`.terraform-version`, `.terragrunt-version`, `.opentofu-version`, `terragrunt.hcl`, `root.hcl`)
+* Explicit input versions (`terraform-version`, `terragrunt-version`, `tenv-version`)
+
+Force a cache refresh by:
+
+* Bumping any of the version files or input version values
+* Adding a dummy change to e.g. `root.hcl` when using constraint based detection
+
+Disable all caches (plugin, terragrunt download dir, tenv tool versions) via `skip-caches: "true"` or enable them with `skip-caches: "false"` (default).
