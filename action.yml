@@ -126,36 +126,8 @@ runs:
         INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Determine version (supports 'latest' or explicit tag, with or without leading 'v')
-        if [[ "${INPUT_TENV_VERSION}" == "latest" ]]; then
-          echo "Resolving latest tenv release via GitHub API";
-          auth_header=()
-          if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
-            auth_header=( -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" )
-          fi
-          # Fetch latest tag
-          latest_json=$(curl --retry 3 -sSL "https://api.github.com/repos/tofuutils/tenv/releases/latest" "${auth_header[@]}")
-          TENV_VERSION=$(printf '%s' "$latest_json" | grep -E '"tag_name"' | head -1 | sed -E 's/.*"tag_name" *: *"([^"]+)".*/\1/')
-          [[ -z "${TENV_VERSION}" ]] && { echo "Failed to determine latest tenv version" >&2; exit 1; }
-        else
-          TENV_VERSION="${INPUT_TENV_VERSION}"
-        fi
-        # Detect architecture and map to DEB naming convention
-        ARCH="$(uname -m)"
-        case "$ARCH" in
-          x86_64) ARCH_DEB="amd64" ;;
-          aarch64 | arm64) ARCH_DEB="arm64" ;;
-          *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
-        esac
-        DEB_FILE="tenv_${TENV_VERSION}_${ARCH_DEB}.deb"
-        DOWNLOAD_URL="https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/${DEB_FILE}"
-        echo "Installing tenv ${TENV_VERSION} from ${DOWNLOAD_URL}";
-        curl --retry 3 -fL -o "${DEB_FILE}" "${DOWNLOAD_URL}" || { echo "Download failed" >&2; exit 1; }
-        if command -v sudo >/dev/null 2>&1; then
-          sudo dpkg -i "${DEB_FILE}"
-        else
-          dpkg -i "${DEB_FILE}"
-        fi
+        chmod +x scripts/install-tenv.sh
+        ./scripts/install-tenv.sh
     - name: Set tenv root path
       if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
@@ -163,7 +135,41 @@ runs:
         # Determine tenv root (allow override via TENV_ROOT env, else default)
         TENV_ROOT_DIR="${TENV_ROOT:-$HOME/.tenv}"
         echo "TENV_ROOT_DIR=$TENV_ROOT_DIR" >> "$GITHUB_ENV"
-        ls -1 "$TENV_ROOT_DIR" || true
+    - name: Detect terraform/terragrunt versions (tenv)
+      shell: bash
+      run: |
+        tf_input="${{ inputs.terraform-version }}"
+        tg_input="${{ inputs.terragrunt-version }}"
+        workdir="${{ inputs.terragrunt-working-directory }}"
+        tf_ver="$tf_input"
+        tg_ver="$tg_input"
+        parse_version(){ # $1=tool name
+          awk -v tool="$1" 'tolower($1)==tolower(tool) && $2 ~ /^[0-9v]/ {gsub(/^v/,"",$2); print $2; exit}'
+        }
+        detect_tool(){ # $1=tool alias (tf/tg), $2=tool name for parse
+          local alias="$1" name="$2" out
+          out=$(pushd $workdir; tenv "$alias" detect 2>&1 || true)
+          printf '%s\n' "$out" | parse_version "$name"
+        }
+        # Terraform auto-detect
+        if [[ "$tf_input" != "disabled" && -z "$tf_input" ]]; then
+          detected_tf=$(detect_tool tf Terraform) || true
+          if [[ -n "$detected_tf" ]]; then
+            tf_ver="$detected_tf"
+            echo "Detected terraform version: $tf_ver"
+          fi
+        fi
+        # Terragrunt auto-detect
+        if [[ "$tg_input" != "disabled" && -z "$tg_input" ]]; then
+          detected_tg=$(detect_tool tg Terragrunt) || true
+          if [[ -n "$detected_tg" ]]; then
+            tg_ver="$detected_tg"
+            echo "Detected terragrunt version: $tg_ver"
+          fi
+        fi
+        # Export final values (could be explicit, detected, blank or 'disabled')
+        echo "tf_ver=$tf_ver" >> "$GITHUB_ENV"
+        echo "tg_ver=$tg_ver" >> "$GITHUB_ENV"
     - name: Cache tenv managed tool versions
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
       uses: actions/cache@v4
@@ -172,17 +178,12 @@ runs:
           ${{ env.TENV_ROOT_DIR }}/Terraform
           ${{ env.TENV_ROOT_DIR }}/Terragrunt
           ${{ env.TENV_ROOT_DIR }}/OpenTofu
-        key: ${{ runner.os }}-tenv-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version','**/terragrunt.hcl','**/root.hcl') }}-${{ inputs.terraform-version }}-${{ inputs.terragrunt-version }}-${{ inputs.tenv-version }}
-        restore-keys: |
-          ${{ runner.os }}-tenv-
-    - name: Install requested tools (terraform/terragrunt)
-      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+        key: ${{ runner.os }}-tenv-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}-${{ env.tf_ver }}-${{ env.tg_ver }}
+    - name: Installs terraform
+      if: inputs.terraform-version != 'disabled'
       shell: bash
       working-directory: ${{ inputs.terragrunt-working-directory }}
       run: |
-        tf_ver="${{ inputs.terraform-version }}"
-        tg_ver="${{ inputs.terragrunt-version }}"
-
         # Terraform install logic
         if [[ "${tf_ver}" != "disabled" ]]; then
           if [[ -z "${tf_ver}" ]]; then
@@ -192,7 +193,11 @@ runs:
             tenv tf install "${tf_ver}"
           fi
         fi
-
+    - name: Install terragrunt
+      if:  inputs.terragrunt-version != 'disabled'
+      shell: bash
+      working-directory: ${{ inputs.terragrunt-working-directory }}
+      run: |
         # Terragrunt install logic
         if [[ "${tg_ver}" != "disabled" ]]; then
           if [[ -z "${tg_ver}" ]]; then
@@ -217,7 +222,7 @@ runs:
         # clean up to make sure self-hosted runner dirs are clean
         shopt -s dotglob
         cd "${TG_DOWNLOAD_DIR:?}" && rm -rf *
-    - name: Cache Terraform
+    - name: Cache Terraform plugins
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v4
       with:
@@ -226,7 +231,7 @@ runs:
         key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl','**/versions.tf') }}
         restore-keys: |
           ${{ runner.os }}-terraform-
-    - name: Cache Terragrunt
+    - name: Cache Terragrunt caches
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v4
       with:

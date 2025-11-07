@@ -178,4 +178,4 @@ Force a cache refresh by:
 * Bumping any of the version files or input version values
 * Adding a dummy change to e.g. `root.hcl` when using constraint based detection
 
-Disable all caches (plugin, terragrunt download dir, tenv tool versions) via `skip-caches: "false"` (set to `true` to skip).
+Disable all caches (plugin, terragrunt download dir, tenv tool versions) via `skip-caches: "true"` or enable them with `skip-caches: "false"` (default).
