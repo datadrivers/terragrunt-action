@@ -111,6 +111,10 @@ inputs:
     description: "This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used"
     required: false
     default: "true"
+  cache-tenv-tools:
+    description: "Enable caching of tenv managed tool versions (~/.tenv). Speeds up repeated runs by avoiding re-download of identical Terraform/Terragrunt versions."
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -152,6 +156,25 @@ runs:
         else
           dpkg -i "${DEB_FILE}"
         fi
+    - name: Set tenv root path
+      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      shell: bash
+      run: |
+        # Determine tenv root (allow override via TENV_ROOT env, else default)
+        TENV_ROOT_DIR="${TENV_ROOT:-$HOME/.tenv}"
+        echo "TENV_ROOT_DIR=$TENV_ROOT_DIR" >> "$GITHUB_ENV"
+        ls -1 "$TENV_ROOT_DIR" || true
+    - name: Cache tenv managed tool versions
+      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.TENV_ROOT_DIR }}/Terraform
+          ${{ env.TENV_ROOT_DIR }}/Terragrunt
+          ${{ env.TENV_ROOT_DIR }}/OpenTofu
+        key: ${{ runner.os }}-tenv-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version','**/terragrunt.hcl','**/root.hcl') }}-${{ inputs.terraform-version }}-${{ inputs.terragrunt-version }}-${{ inputs.tenv-version }}
+        restore-keys: |
+          ${{ runner.os }}-tenv-
     - name: Install requested tools (terraform/terragrunt)
       if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
