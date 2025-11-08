@@ -1,3 +1,11 @@
+## [2.2.1](https://github.com/datadrivers/terragrunt-action/compare/v2.2.0...v2.2.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **tenv:** find action resources ([d25655e](https://github.com/datadrivers/terragrunt-action/commit/d25655ed82587d02c8dafbfd85c231d2e0de0354))
+* **tenv:** reuse tool install cache ([aeced4e](https://github.com/datadrivers/terragrunt-action/commit/aeced4e2febe845d326e3b3dc003cf0f118597f7))
+
 # [2.2.0](https://github.com/datadrivers/terragrunt-action/compare/v2.1.1...v2.2.0) (2025-11-07)
 
 
