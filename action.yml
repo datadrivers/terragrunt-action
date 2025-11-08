@@ -177,7 +177,9 @@ runs:
           ${{ env.TENV_ROOT_DIR }}/Terraform
           ${{ env.TENV_ROOT_DIR }}/Terragrunt
           ${{ env.TENV_ROOT_DIR }}/OpenTofu
-        key: ${{ runner.os }}-tenv-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}-${{ env.tf_ver }}-${{ env.tg_ver }}
+        key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
+        restore-keys: |
+          ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}
     - name: Installs terraform
       if: inputs.terraform-version != 'disabled'
       shell: bash
