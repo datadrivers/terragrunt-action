@@ -126,8 +126,7 @@ runs:
         INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        chmod +x scripts/install-tenv.sh
-        ./scripts/install-tenv.sh
+        bash "${{ github.action_path }}/scripts/install-tenv.sh"
     - name: Set tenv root path
       if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
