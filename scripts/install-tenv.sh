@@ -15,7 +15,7 @@ resolve_tenv_latest() {
   fi
   local resp body code ver
   # Try releases/latest
-  resp="$(curl -sS -w '\n%{http_code}' -L "${api_base}/releases/latest" ${auth_header:+"${auth_header[@]}"})" || resp=""
+  resp="$(curl -sS --retry 3 --retry-all-errors --fail -w '\n%{http_code}' -L "${api_base}/releases/latest" ${auth_header:+"${auth_header[@]}"})" || resp=""
   code="${resp##*$'\n'}"
   body="${resp%$'\n'$code}"
   if [[ "$code" != 200 || -z "$body" ]]; then
