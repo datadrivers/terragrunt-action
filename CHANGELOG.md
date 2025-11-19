@@ -1,3 +1,10 @@
+## [2.2.2](https://github.com/datadrivers/terragrunt-action/compare/v2.2.1...v2.2.2) (2025-11-19)
+
+
+### Bug Fixes
+
+* let curl retry rate limit errors ([e3e24b4](https://github.com/datadrivers/terragrunt-action/commit/e3e24b4cd0dc9f70bcd52b5a3bc460373d283e38))
+
 ## [2.2.1](https://github.com/datadrivers/terragrunt-action/compare/v2.2.0...v2.2.1) (2025-11-08)
 
 
