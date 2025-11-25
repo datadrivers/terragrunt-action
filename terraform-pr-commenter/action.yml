@@ -1,0 +1,70 @@
+name: "Terraform Plan PR Commenter"
+description: "Composite action that converts terraform plan files to json and posts PR comments via liatrio/terraform-change-pr-commenter"
+
+inputs:
+  terraform-plan-filename:
+    description: "name for terraform plan files"
+    required: false
+    default: "terraform.tfplan"
+  use-automatic-binary-detection:
+    description: "auto-detect terraform/terragrunt binary for conversion"
+    required: false
+    default: "true"
+  enable-debug:
+    description: "enable debug"
+    required: false
+    default: "false"
+  include-plan-job-summary:
+    description: "pass through to commenter"
+    required: false
+    default: "true"
+  pr-commenter-comment-header:
+    description: "Header for the PR comment"
+    required: false
+    default: "Terraform Plan Changes"
+  pr-commenter-comment-footer:
+    description: "Footer for the PR comment"
+    required: false
+    default: ""
+  continue-on-error:
+    description: "Continue even if the commenter fails"
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub token for posting PR comments"
+    required: false
+    default: "${{ github.token }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Convert terraform plan files to json (script)
+      id: tf-planfiles
+      shell: bash
+      env:
+        INPUT_TERRAFORM_PLAN_FILENAME: ${{ inputs.terraform-plan-filename }}
+        INPUT_USE_AUTOMATIC_BINARY_DETECTION: ${{ inputs.use-automatic-binary-detection }}
+        INPUT_ENABLE_DEBUG: ${{ inputs.enable-debug }}
+      run: |
+        bash "$GITHUB_ACTION_PATH/convert_plan_to_json.sh"
+      # capture output in a step id for later use
+
+    - name: Add PR comment for terraform plan changes
+      if: steps.tf-planfiles.outputs.terraform_planfiles_json
+      uses: liatrio/terraform-change-pr-commenter@v1.14.0
+      continue-on-error: ${{ inputs.continue-on-error }}
+      with:
+        include-plan-job-summary: ${{ inputs.include-plan-job-summary }}
+        github-token: ${{ inputs.github-token }}
+        include-workflow-link: true
+        comment-header: ${{ inputs.pr-commenter-comment-header }}
+        comment-footer: ${{ inputs.pr-commenter-comment-footer }}
+        hide-previous-comments: true
+        log-changed-resources: false
+        json-file: |
+          ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
+
+outputs:
+  terraform_planfiles_json:
+    description: "Newline-separated list of generated tfplan json files"
+    value: ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
