@@ -1,3 +1,15 @@
+# [3.0.0](https://github.com/datadrivers/terragrunt-action/compare/v2.2.2...v3.0.0) (2025-11-25)
+
+
+* feat!: change github token logic ([#60](https://github.com/datadrivers/terragrunt-action/issues/60)) ([954b3d1](https://github.com/datadrivers/terragrunt-action/commit/954b3d1e2608868b2fd3b69aaef61b7f026ca926))
+
+
+### BREAKING CHANGES
+
+* removed input github-token
+
+Signed-off-by: Steffen Tautenhahn <stevie-@users.noreply.github.com>
+
 ## [2.2.2](https://github.com/datadrivers/terragrunt-action/compare/v2.2.1...v2.2.2) (2025-11-19)
 
 
