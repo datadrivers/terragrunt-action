@@ -9,9 +9,9 @@ branding:
 
 inputs:
   terraform-version:
-    description: "terraform version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
+    description: "terraform version to setup. Use 'disabled' to skip. Set to empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
     required: false
-    default: "disabled"
+    default: ""
   terraform-plan-filename:
     description: "name for terraform plan files, which are used as input to generate plan json files as input for pr-commenter action"
     required: false
@@ -49,8 +49,8 @@ inputs:
     required: false
     default: ""
   commands:
-    description: "terraform execution line. For multiple commands use | multi line syntax"
-    required: true
+    description: "commands execution line. For multiple commands use | multi line syntax; required to generate plan within commands files for pr comments"
+    required: false
   use-aws-auth:
     description: "Toggle to log in to aws"
     required: false
@@ -104,9 +104,6 @@ inputs:
     description: "Add debug output to steps"
     required: false
     default: "false"
-  github-token:
-    description: "Github token to use for getting latest release"
-    required: false
   use-automatic-binary-detection:
     description: "This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used"
     required: false
@@ -124,7 +121,6 @@ runs:
       shell: bash
       env:
         INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         bash "${{ github.action_path }}/scripts/install-tenv.sh"
     - name: Set tenv root path

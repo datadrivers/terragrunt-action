@@ -4,14 +4,14 @@
 set -euo pipefail
 
 INPUT_TENV_VERSION="${INPUT_TENV_VERSION:-latest}"
-INPUT_GITHUB_TOKEN="${INPUT_GITHUB_TOKEN:-}" # optional
+TENV_GITHUB_TOKEN="${TENV_GITHUB_TOKEN:-"${GITHUB_TOKEN}"}" # reuse TENV_GITHUB_TOKEN if set, else GITHUB_TOKEN
 
 resolve_tenv_latest() {
   local api_base="https://api.github.com/repos/tofuutils/tenv"
   # Always initialize array to avoid unbound variable errors with set -u
   local auth_header=()
-  if [[ -n "$INPUT_GITHUB_TOKEN" ]]; then
-    auth_header=( -H "Authorization: Bearer $INPUT_GITHUB_TOKEN" )
+  if [[ -n "$TENV_GITHUB_TOKEN" ]]; then
+    auth_header=( -H "Authorization: Bearer $TENV_GITHUB_TOKEN" )
   fi
   local resp body code ver
   # Try releases/latest
