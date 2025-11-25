@@ -1,6 +1,7 @@
 # Github Action to run terraform and terragrunt
 
 > Note: As of October 2025 this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). No changes to the input interface are required; specify `terraform-version` / `terragrunt-version` as before.
+> Set TENV_GITHUB_TOKEN environment variable to ${{ github.token }} for tenv API calls to github (e.g. to avoid rate limits).
 
 ## Examples
 
@@ -17,21 +18,23 @@ on:
       - 'terraform/**'
       - '.terraform-version'
 
-permissions:
-  id-token: write
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   terraform-plan:
     name: TF run
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v1
+        uses: datadrivers/terragrunt-action@v2
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}            # optional but avoids API rate limits when calling github API for tools installation
           terraform-version: ""
           use-aws-auth: "true"
           aws-region: ${{ var.AWS_REGION }}
@@ -39,7 +42,7 @@ jobs:
           skip-caches: "false"
           cache-tenv-tools: "true" # optional, default true
           terraform-working-directory: "terraform/"  # optional, defaults to root of repo
-          commands: |
+      - run: |
             terraform plan
 ```
 
@@ -69,15 +72,17 @@ env:
   AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TERRAFORM }}
   TERRAGRUNT_PARALLELISM: 4                                 # limit CPU usage
 
-permissions:
-  id-token: write
-  contents: read
-  pull-requests: write
+
+permissions: {}
 
 jobs:
   terraform-validate:
     name: TF code in project-dev
     runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
       - name: Set terra*_version variables from files
@@ -87,7 +92,9 @@ jobs:
           echo "TERRAFORM_VERSION=$TF_VER" >> $GITHUB_ENV
           echo "TERRAGRUNT_VERSION=$TG_VER" >> $GITHUB_ENV
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v1
+        uses: datadrivers/terragrunt-action@v2
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
           terraform-version: ${{ env.TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
@@ -105,10 +112,12 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v1
+        uses: datadrivers/terragrunt-action@v2
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
-          terraform-version: ${{ env.TERRAFORM_VERSION }}
-          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          terraform-version: ""
+          terragrunt-version: ""
           use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
@@ -122,10 +131,12 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v1
+        uses: datadrivers/terragrunt-action@v2
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
-          terraform-version: ${{ env.TERRAFORM_VERSION }}
-          terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
+          terraform-version: ""
+          terragrunt-version: ""
           use-gcloud-auth: "true"
           gcp-workload-identity-provider: "projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
           gcp-service-account-email: "automation-github@project-id.iam.gserviceaccount.com"
@@ -139,9 +150,11 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v1
+        uses: datadrivers/terragrunt-action@v2
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
-          terraform-version: ${{ env.TERRAFORM_VERSION }}
+          terraform-version: ""
           use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
           aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
