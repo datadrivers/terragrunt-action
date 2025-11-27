@@ -1,3 +1,15 @@
+# [4.0.0](https://github.com/datadrivers/terragrunt-action/compare/v3.0.0...v4.0.0) (2025-11-27)
+
+
+* feat!: split pr-commenter into sub action ([#61](https://github.com/datadrivers/terragrunt-action/issues/61)) ([e752434](https://github.com/datadrivers/terragrunt-action/commit/e7524344e1370c8dc379deaf0b1bb0da59a502a4))
+
+
+### BREAKING CHANGES
+
+* pr commenter removed into separate action
+
+Signed-off-by: Steffen Tautenhahn <stevie-@users.noreply.github.com>
+
 # [3.0.0](https://github.com/datadrivers/terragrunt-action/compare/v2.2.2...v3.0.0) (2025-11-25)
 
 
