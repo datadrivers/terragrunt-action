@@ -31,16 +31,21 @@ jobs:
         with:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment
+          working-directory: examples/test-pr-comment
           skip-caches: true
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
-          terraform-plan-filename: terraform.tfplan
-          enable-debug: true # for prod use false here
-          commands: |
-            terraform init
-            terraform plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-24.04
@@ -57,17 +62,22 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt
+          working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
+          terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt"
           pr-commenter-comment-footer: "Expecting 2 plans of 1 created resource each"
-          terraform-plan-filename: terraform.tfplan
-          enable-debug: true # for prod use false here
-          commands: |
-            terragrunt run --all -- init
-            terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terragrunt-pr-comment-no-plan:
     name: TF code in examples/test-pr-comment-terragrunt-no-plan
     runs-on: ubuntu-24.04
@@ -84,18 +94,23 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-plan
+          working-directory: examples/test-pr-comment-terragrunt-no-plan
           skip-caches: false
           terragrunt-cache-extra-key: ${{ hashFiles('**/README.md') }}
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-terragrunt-no-plan
+        run: |
+          terragrunt run --all -- init
+          terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-no-plan"
           pr-commenter-comment-footer: "No plan was generated for this PR"
-          terraform-plan-filename: terraform.tfplan
-          enable-debug: true # for prod use false here
-          commands: |
-            terragrunt run --all -- init
-            terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terragrunt-pr-comment-no-change:
     name: TF code in examples/test-pr-comment-terragrunt-no-change
     runs-on: ubuntu-24.04
@@ -112,16 +127,21 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-no-change
+          working-directory: examples/test-pr-comment-terragrunt-no-change
           skip-caches: true
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-terragrunt-no-change
+        run: |
+          terragrunt run --all -- init
+          terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-no-change"
           pr-commenter-comment-footer: "Expecting no changes in the PR comment"
-          terraform-plan-filename: terraform.tfplan
-          enable-debug: true # for prod use false here
-          commands: |
-            terragrunt run --all -- init
-            terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terragrunt-pr-comment-with-no-summary:
     name: TF code in examples/test-pr-comment-terragrunt-with-no-summary
     runs-on: ubuntu-24.04
@@ -138,18 +158,23 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-terragrunt-with-no-summary
+          working-directory: examples/test-pr-comment-terragrunt-with-no-summary
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-terragrunt-with-no-summary
+        run: |
+          terragrunt run --all -- init
+          terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-with-no-summary"
           pr-commenter-comment-footer: "Expecting no summary in the PR comment, but 2 plans of 1 created resource each"
           include-plan-job-summary: false
-          terraform-plan-filename: terraform.tfplan
-          enable-debug: true # for prod use false here
-          commands: |
-            terragrunt run --all -- init
-            terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terraform-pr-comment-with-binary-detection-override:
     name: TF code in examples/test-pr-comment-with-binary-detection-override
     runs-on: ubuntu-24.04
@@ -165,17 +190,22 @@ jobs:
         with:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-comment-with-binary-detection-override
+          working-directory: examples/test-pr-comment-with-binary-detection-override
           skip-caches: true
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-with-binary-detection-override
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment-with-binary-detection-override"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
-          terraform-plan-filename: terraform.tfplan
           use-automatic-binary-detection: false
-          enable-debug: true # for prod use false here
-          commands: |
-            terraform init
-            terraform plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terraform-pr-comment-versionfile:
     name: TF code in examples/test-pr-detect-versionfile
     runs-on: ubuntu-24.04
@@ -191,17 +221,21 @@ jobs:
         with:
           terraform-version: "" # leave empty to detect from versionfile
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-detect-versionfile
+          working-directory: examples/test-pr-detect-versionfile
           skip-caches: false
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-detect-versionfile
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
-          terraform-plan-filename: terraform.tfplan
-          use-automatic-binary-detection: false
-          enable-debug: true # for prod use false here
-          commands: |
-            terraform init
-            terraform plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terraform-pr-comment-versionfile-terragrunt:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt
     runs-on: ubuntu-24.04
@@ -218,17 +252,21 @@ jobs:
           terraform-version: "" # leave empty to detect from versionfile-terraform
           terragrunt-version: "" # leave empty to detect from versionfile-terragrunt
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-detect-versionfile-terragrunt
+          working-directory: examples/test-pr-detect-versionfile-terragrunt
           skip-caches: false
-          enable-terraform-change-pr-commenter: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-detect-versionfile-terragrunt
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile-terragrunt"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
-          terraform-plan-filename: terraform.tfplan
-          use-automatic-binary-detection: false
-          enable-debug: true # for prod use false here
-          commands: |
-            terraform init
-            terraform plan -out terraform.tfplan # required to generate pr comments
+          enable-debug: true
   test-terraform-detect-versions:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt (no PR comment)
     runs-on: ubuntu-24.04
@@ -245,9 +283,8 @@ jobs:
           terraform-version: "" # leave empty to detect from versionfile-terraform
           terragrunt-version: "" # leave empty to detect from versionfile-terragrunt
           use-aws-auth: false
-          terragrunt-working-directory: examples/test-pr-detect-versionfile-terragrunt
+          working-directory: examples/test-pr-detect-versionfile-terragrunt
           skip-caches: false
-          enable-terraform-change-pr-commenter: false
           enable-debug: true # for prod use false here
       - name: run commands
         working-directory: examples/test-pr-detect-versionfile-terragrunt

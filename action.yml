@@ -9,27 +9,7 @@ branding:
 
 inputs:
   terraform-version:
-    description: "terraform version to setup. Use 'disabled' to skip. Set to empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
-    required: false
-    default: ""
-  terraform-plan-filename:
-    description: "name for terraform plan files, which are used as input to generate plan json files as input for pr-commenter action"
-    required: false
-    default: "terraform.tfplan"
-  enable-terraform-change-pr-commenter:
-    description: "toggle to add pr comment for terraform-plan-filename files. Requires pre-generated terraform.tfplan file."
-    required: false
-    default: "false"
-  include-plan-job-summary:
-    description: "If true, add the results of the plan to the workflow job summary."
-    required: false
-    default: "true"
-  pr-commenter-comment-header:
-    description: "Header for the PR comment"
-    required: false
-    default: "Terraform Plan Changes"
-  pr-commenter-comment-footer:
-    description: "Footer for the PR comment"
+    description: "terraform version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
     required: false
     default: ""
   tenv-version:
@@ -40,7 +20,7 @@ inputs:
     description: "terragrunt version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terragrunt-version / .tool-versions)."
     required: false
     default: "disabled"
-  terragrunt-working-directory:
+  working-directory:
     description: "working-directory for github step to run terragrunt/terraform command"
     required: false
     default: "."
@@ -104,10 +84,6 @@ inputs:
     description: "Add debug output to steps"
     required: false
     default: "false"
-  use-automatic-binary-detection:
-    description: "This action automatically detects which binary (terraform XOR terragrunt) to use. It does this by checking if terragrunt.hcl is present. If you set this to false terraform will be used"
-    required: false
-    default: "true"
   cache-tenv-tools:
     description: "Enable caching of tenv managed tool versions (~/.tenv). Speeds up repeated runs by avoiding re-download of identical Terraform/Terragrunt versions."
     required: false
@@ -135,7 +111,7 @@ runs:
       run: |
         tf_input="${{ inputs.terraform-version }}"
         tg_input="${{ inputs.terragrunt-version }}"
-        workdir="${{ inputs.terragrunt-working-directory }}"
+        workdir="${{ inputs.working-directory }}"
         tf_ver="$tf_input"
         tg_ver="$tg_input"
         parse_version(){ # $1=tool name
@@ -170,16 +146,16 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ${{ env.TENV_ROOT_DIR }}/Terraform
-          ${{ env.TENV_ROOT_DIR }}/Terragrunt
-          ${{ env.TENV_ROOT_DIR }}/OpenTofu
+          ${{ env.TENV_ROOT_DIR }}/Terraform/${{ env.tf_ver != 'disabled' && env.tf_ver || '' }}
+          ${{ env.TENV_ROOT_DIR }}/Terragrunt/${{ env.tg_ver != 'disabled' && env.tg_ver || '' }}
+          ${{ env.TENV_ROOT_DIR }}/OpenTofu/
         key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
         restore-keys: |
           ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}
     - name: Installs terraform
       if: inputs.terraform-version != 'disabled'
       shell: bash
-      working-directory: ${{ inputs.terragrunt-working-directory }}
+      working-directory: ${{ inputs.working-directory }}
       run: |
         # Terraform install logic
         if [[ "${tf_ver}" != "disabled" ]]; then
@@ -191,9 +167,9 @@ runs:
           fi
         fi
     - name: Install terragrunt
-      if:  inputs.terragrunt-version != 'disabled'
+      if: inputs.terragrunt-version != 'disabled'
       shell: bash
-      working-directory: ${{ inputs.terragrunt-working-directory }}
+      working-directory: ${{ inputs.working-directory }}
       run: |
         # Terragrunt install logic
         if [[ "${tg_ver}" != "disabled" ]]; then
@@ -255,57 +231,6 @@ runs:
         role-duration-seconds: ${{ inputs.aws-role-duration-seconds }}
     - name: Run Terraform
       shell: bash
-      working-directory: ${{ inputs.terragrunt-working-directory }}
+      working-directory: ${{ inputs.working-directory }}
+      if: inputs.commands != ''
       run: ${{ inputs.commands }}
-    - name: Convert terraform plan files to json
-      if: inputs.enable-terraform-change-pr-commenter == 'true'
-      env:
-        INPUT_TERRAFORM_PLAN_FILENAME: ${{ inputs.terraform-plan-filename }}
-        INPUT_USE_AUTOMATIC_BINARY_DETECTION: ${{ inputs.use-automatic-binary-detection }}
-        INPUT_ENABLE_DEBUG: ${{ inputs.enable-debug }}
-      shell: bash
-      id: tf-planfiles
-      run: |
-        echo "::group::convert terraform plan files to json"
-        [[ "$ACT" == "true" ]] && apt-get update && apt-get install parallel -y # on act runner parallel is missing
-        set -e
-        [[ "${INPUT_ENABLE_DEBUG}" == "true" ]] && set -x
-        planfiles_json=()
-        tf_convert_plan_to_json(){
-          [[ "${INPUT_ENABLE_DEBUG}" == "true" ]] && set -x
-          exec 3>&1
-          exec 1>&2
-          set -e
-          local planfile=$1
-          planfile_name=$(echo ${planfile##*/})
-          planfile_path=$(dirname $planfile)
-          terraform_bin="terraform"
-          tfplan_json=$(readlink -f "${planfile_path}/tfplan.json")
-          cd "${planfile_path}"
-          [[ "${INPUT_USE_AUTOMATIC_BINARY_DETECTION}" == "true" ]] && test -s terragrunt.hcl && terraform_bin="terragrunt" || true
-          $terraform_bin show -no-color -json "${planfile_name}" > "${tfplan_json}"
-          echo ${tfplan_json} >&3
-          cd - &>/dev/null
-        };
-        export -f tf_convert_plan_to_json
-        mapfile -t planfiles_json < <( find . -type f -name ${INPUT_TERRAFORM_PLAN_FILENAME} | parallel 'tf_convert_plan_to_json {}' )
-        content=$(printf "%s\n" "${planfiles_json[@]}")
-        if [[ -n "${content}" ]]; then
-          delimiter="$(openssl rand -hex 8)"
-          echo "terraform_planfiles_json<<${delimiter}" >> "${GITHUB_OUTPUT}"
-          echo "${content}" >> "${GITHUB_OUTPUT}"
-          echo "${delimiter}" >> "${GITHUB_OUTPUT}"
-        fi
-        echo "::endgroup::"
-    - name: Add PR comment for terraform plan changes
-      if: inputs.enable-terraform-change-pr-commenter == 'true' && endsWith( steps.tf-planfiles.outputs.terraform_planfiles_json , '.json' )
-      uses: liatrio/terraform-change-pr-commenter@v1.14.0
-      continue-on-error: true
-      with:
-        include-plan-job-summary: ${{ inputs.include-plan-job-summary }}
-        comment-header: ${{ inputs.pr-commenter-comment-header }}
-        comment-footer: ${{ inputs.pr-commenter-comment-footer }}
-        hide-previous-comments: true
-        log-changed-resources: false
-        json-file: |
-          ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}

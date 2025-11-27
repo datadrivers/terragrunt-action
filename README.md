@@ -5,7 +5,7 @@
 
 ## Examples
 
-### Run terraform without terragrunt
+### Run terraform (without terragrunt)
 
 Common minimal workflow example. Leave `terraform-version` blank to let tenv auto-detect from `.terraform-version` or `.tool-versions`.
 
@@ -22,27 +22,25 @@ permissions: {}
 
 jobs:
   terraform-plan:
-    name: TF run
     runs-on: ubuntu-24.04
     permissions:
-      id-token: write
+      id-token: write       # for OIDC auth
       contents: read
-      pull-requests: write
+      pull-requests: write  # for PR commenter
     steps:
-      - uses: actions/checkout@v5
-      - name: run terraform
-        uses: datadrivers/terragrunt-action@v2
+      - uses: actions/checkout@v6
+      - name: install terraform
+        uses: datadrivers/terragrunt-action@v4
         env:
           TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
           terraform-version: ""
           use-aws-auth: "true"
           aws-region: ${{ var.AWS_REGION }}
-          aws-role-to-assume: ${{ var.AWS_ROLE_TO_ASSUME }}
-          skip-caches: "false"
-          cache-tenv-tools: "true" # optional, default true
-          terraform-working-directory: "terraform/"  # optional, defaults to root of repo
-      - run: |
+          aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - name: run terraform
+        working-directory: "terraform/"
+        run: |
             terraform plan
 ```
 
@@ -68,10 +66,7 @@ defaults:
 env:
   AWS_REGION: "eu-central-1"
   ACCOUNT: project-dev
-  CONFIG_PATH: terraform/project                            # used in custom scripts
-  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TERRAFORM }}
-  TERRAGRUNT_PARALLELISM: 4                                 # limit CPU usage
-
+  TERRAGRUNT_PARALLELISM: 4          # limit CPU usage
 
 permissions: {}
 
@@ -80,11 +75,11 @@ jobs:
     name: TF code in project-dev
     runs-on: ubuntu-24.04
     permissions:
-      id-token: write
+      id-token: write       # for OIDC auth
       contents: read
-      pull-requests: write
+      pull-requests: write  # for PR commenter
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set terra*_version variables from files
         run: |
           TF_VER=$(cat .terraform-version)
@@ -92,7 +87,7 @@ jobs:
           echo "TERRAFORM_VERSION=$TF_VER" >> $GITHUB_ENV
           echo "TERRAGRUNT_VERSION=$TG_VER" >> $GITHUB_ENV
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v2
+        uses: datadrivers/terragrunt-action@v4
         env:
           TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
@@ -100,19 +95,19 @@ jobs:
           terragrunt-version: ${{ env.TERRAGRUNT_VERSION }}
           use-aws-auth: "true"
           aws-region: ${{ env.AWS_REGION }}
-          aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-role-to-assume: ${{ secrets.AWS_ROLE_TERRAFORM }}
           terragrunt-download: "$HOME/.terragrunt-cache/${{ env.ACCOUNT }}"
           skip-caches: "false"
           commands: |
-            scripts/terragrunt/run_terragrunt run --all -- init
-            scripts/terragrunt/run_terragrunt run --all -- plan -out terraform.tfplan
+            terragrunt run --all -- init
+            terragrunt run --all -- plan -out terraform.tfplan
 ```
 
 ### Run terraform validate and plan via terragrunt
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v2
+        uses: datadrivers/terragrunt-action@v4
         env:
           TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
@@ -131,7 +126,7 @@ jobs:
 
 ```yaml
       - name: run terraform
-        uses: datadrivers/terragrunt-action@v2
+        uses: datadrivers/terragrunt-action@v4
         env:
           TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
         with:
@@ -146,24 +141,39 @@ jobs:
             terragrunt run --all -- plan
 ```
 
-### Run terraform and create pr comment for plan on pull_request
+### Run terraform and create PR comment for plan on pull_request
+
+terraform commands have to make sure to create a plan file (e.g. `terraform.tfplan`) for the PR commenter action to pick up and convert to JSON for the comment.:
 
 ```yaml
-      - name: run terraform
-        uses: datadrivers/terragrunt-action@v2
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write       # for OIDC auth
+      contents: read
+      pull-requests: write  # for PR commenter
+    steps:
+      - uses: actions/checkout@v6
+      - name: install terraform
+        uses: datadrivers/terragrunt-action@v4
         env:
-          TENV_GITHUB_TOKEN: ${{ github.token }}   # optional but avoids API rate limits when calling github API for tools installation
+          TENV_GITHUB_TOKEN: ${{ github.token }}
         with:
           terraform-version: ""
-          use-aws-auth: "true"
-          aws-region: ${{ env.AWS_REGION }}
-          aws-role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          skip-caches: "false"
-          enable-terraform-change-pr-commenter: ${{ github.event_name == 'pull_request' }}
-          terraform-plan-filename: terraform.tfplan
-          commands: |
-            terraform init
-            terraform plan -out terraform.tfplan
+      - name: run terraform
+        working-directory: examples/my-module
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan
+      - name: add PR comment for terraform plan
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: datadrivers/terragrunt-action/terraform-pr-commenter@v4
+        with:
+          terraform-plan-filename: terraform.tfplan # default
+          pr-commenter-comment-header: "Terraform Plan Changes" # default
+          pr-commenter-comment-footer: "Review plan above"
+          github-token: ${{ secrets.PAT_TOKEN }} # optional, uses GITHUB_TOKEN by default
 ```
 
 ## tenv tool version caching
@@ -175,20 +185,20 @@ Input: `cache-tenv-tools` (default `true`). Set to `false` to skip caching.
 What is cached:
 
 ```text
-~/.tenv/Terraform
-~/.tenv/Terragrunt
+~/.tenv/Terraform/{tool version}
+~/.tenv/Terragrunt/{tool version}
 ~/.tenv/OpenTofu
 ```
 
 Cache key components:
 
-* OS (`runner.os`)
-* Hash of local version indicator files (`.terraform-version`, `.terragrunt-version`, `.opentofu-version`, `terragrunt.hcl`, `root.hcl`)
-* Explicit input versions (`terraform-version`, `terragrunt-version`, `tenv-version`)
+- OS (`runner.os`)
+- Hash of local version indicator files (`.terraform-version`, `.terragrunt-version`, `.opentofu-version`, `terragrunt.hcl`, `root.hcl`)
+- Explicit input versions (`terraform-version`, `terragrunt-version`, `tenv-version`)
 
 Force a cache refresh by:
 
-* Bumping any of the version files or input version values
-* Adding a dummy change to e.g. `root.hcl` when using constraint based detection
+- Bumping any of the version files or input version values
+- Adding a dummy change to e.g. `root.hcl` when using constraint based detection
 
 Disable all caches (plugin, terragrunt download dir, tenv tool versions) via `skip-caches: "true"` or enable them with `skip-caches: "false"` (default).
