@@ -141,14 +141,39 @@ runs:
         # Export final values (could be explicit, detected, blank or 'disabled')
         echo "tf_ver=$tf_ver" >> "$GITHUB_ENV"
         echo "tg_ver=$tg_ver" >> "$GITHUB_ENV"
+    - name: Build tenv cache paths
+      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
+      shell: bash
+      run: |
+        paths=()
+        # Terraform path logic
+        if [[ "${{ env.tf_ver }}" != "disabled" ]]; then
+          if [[ "${{ env.tf_ver }}" == "latest" || -z "${{ env.tf_ver }}" ]]; then
+            paths+=("${{ env.TENV_ROOT_DIR }}/Terraform/")
+          else
+            paths+=("${{ env.TENV_ROOT_DIR }}/Terraform/${{ env.tf_ver }}")
+          fi
+        fi
+        # Terragrunt path logic
+        if [[ "${{ env.tg_ver }}" != "disabled" ]]; then
+          if [[ "${{ env.tg_ver }}" == "latest" || -z "${{ env.tg_ver }}" ]]; then
+            paths+=("${{ env.TENV_ROOT_DIR }}/Terragrunt/")
+          else
+            paths+=("${{ env.TENV_ROOT_DIR }}/Terragrunt/${{ env.tg_ver }}")
+          fi
+        fi
+        # OpenTofu (always included for now)
+        paths+=("${{ env.TENV_ROOT_DIR }}/OpenTofu/")
+        # Join paths with newline and export
+        cache_paths=$(printf '%s\n' "${paths[@]}")
+        echo "TENV_CACHE_PATHS<<EOF" >> "$GITHUB_ENV"
+        echo "$cache_paths" >> "$GITHUB_ENV"
+        echo "EOF" >> "$GITHUB_ENV"
     - name: Cache tenv managed tool versions
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
       uses: actions/cache@v4
       with:
-        path: |
-          ${{ env.TENV_ROOT_DIR }}/Terraform/${{ env.tf_ver != 'disabled' && env.tf_ver || '' }}
-          ${{ env.TENV_ROOT_DIR }}/Terragrunt/${{ env.tg_ver != 'disabled' && env.tg_ver || '' }}
-          ${{ env.TENV_ROOT_DIR }}/OpenTofu/
+        path: ${{ env.TENV_CACHE_PATHS }}
         key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
         restore-keys: |
           ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}
