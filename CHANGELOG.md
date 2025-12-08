@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/datadrivers/terragrunt-action/compare/v4.0.0...v4.0.1) (2025-12-08)
+
+
+### Bug Fixes
+
+* build cache path based on inputs ([a173c73](https://github.com/datadrivers/terragrunt-action/commit/a173c7384b3f894941b4515c8b0e594b45d03fb9))
+
 # [4.0.0](https://github.com/datadrivers/terragrunt-action/compare/v3.0.0...v4.0.0) (2025-11-27)
 
 
