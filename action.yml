@@ -171,7 +171,7 @@ runs:
         echo "EOF" >> "$GITHUB_ENV"
     - name: Cache tenv managed tool versions
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ env.TENV_CACHE_PATHS }}
         key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
@@ -222,7 +222,7 @@ runs:
         cd "${TG_DOWNLOAD_DIR:?}" && rm -rf *
     - name: Cache Terraform plugins
       if: inputs.skip-caches == 'false'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.terraform.d/plugin-cache
@@ -231,7 +231,7 @@ runs:
           ${{ runner.os }}-terraform-
     - name: Cache Terragrunt caches
       if: inputs.skip-caches == 'false'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ${{ env.TG_DOWNLOAD_DIR }}
