@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/datadrivers/terragrunt-action/compare/v4.0.1...v4.0.2) (2025-12-22)
+
+
+### Bug Fixes
+
+* mitigate TF plugin cache bloat ([52f48af](https://github.com/datadrivers/terragrunt-action/commit/52f48af77f474a8aea800c00e466114d9fc8e12e))
+
 ## [4.0.1](https://github.com/datadrivers/terragrunt-action/compare/v4.0.0...v4.0.1) (2025-12-08)
 
 
