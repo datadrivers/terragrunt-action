@@ -202,3 +202,21 @@ Force a cache refresh by:
 - Adding a dummy change to e.g. `root.hcl` when using constraint based detection
 
 Disable all caches (plugin, terragrunt download dir, tenv tool versions) via `skip-caches: "true"` or enable them with `skip-caches: "false"` (default).
+
+## Terraform plugin cache bloat mitigation
+
+Problem: When `TF_PLUGIN_CACHE_DIR` points to a single shared directory, restoring a cache and then downloading new providers causes the directory to accumulate provider versions over time. Subsequent cache saves include both old and new providers, leading to large cache entries.
+
+Mitigation implemented in this action:
+
+- The plugin cache directory is now scoped per lockfile hash. Internally, the action computes a hash of all `**/.terraform.lock.hcl` and `**/versions.tf` files and sets:
+
+  - `TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache/<LOCK_HASH>`
+
+- The cache path targets this hashed subdirectory, and the cache key includes the same `<LOCK_HASH>`. This ensures each distinct dependency set has its own isolated cache, preventing old providers from being bundled with new ones.
+
+Notes:
+
+- If no lockfile is present, the action uses a fallback scope `no-lock`.
+- We removed broad restore-keys for the plugin cache to avoid restoring mismatched provider sets into the current scope.
+- For self-hosted runners, you can periodically prune older hashed subdirectories under `~/.terraform.d/plugin-cache/` if disk usage is a concern (safe to delete non-current hashes; they will be rehydrated from cache when needed).

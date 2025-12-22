@@ -89,6 +89,14 @@ inputs:
     required: false
     default: "true"
 
+outputs:
+  terragrunt-download-dir:
+    description: "Path to the terragrunt cache directory"
+    value: ${{ steps.config-caches.outputs.TG_DOWNLOAD_DIR }}
+  terraform-plugin-cache-dir:
+    description: "Path to the terraform plugin cache directory"
+    value: ${{ env.TF_PLUGIN_CACHE_DIR }}
+
 runs:
   using: "composite"
   steps:
@@ -141,6 +149,17 @@ runs:
         # Export final values (could be explicit, detected, blank or 'disabled')
         echo "tf_ver=$tf_ver" >> "$GITHUB_ENV"
         echo "tg_ver=$tg_ver" >> "$GITHUB_ENV"
+    - name: Compute terraform plugin cache scope (by lockfile hash)
+      id: plugin-scope
+      if: inputs.skip-caches == 'false'
+      shell: bash
+      run: |
+        # Use the same inputs as the cache key to derive a stable folder name.
+        LOCK_HASH="${{ hashFiles('**/.terraform.lock.hcl','**/versions.tf') }}"
+        if [[ -z "$LOCK_HASH" ]]; then
+          LOCK_HASH="no-lock"
+        fi
+        echo "lock_hash=$LOCK_HASH" >> "$GITHUB_OUTPUT"
     - name: Build tenv cache paths
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
       shell: bash
@@ -205,17 +224,21 @@ runs:
             tenv tg install "${tg_ver}"
           fi
         fi
-    - name: Config caches
+    - name: Configure caches
+      id: config-caches
       if: inputs.skip-caches == 'false'
       env:
         INPUT_TERRAGRUNT_DOWNLOAD: ${{ inputs.terragrunt-download }}
       shell: bash
       run: |
-        TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+        TF_PLUGIN_CACHE_BASE="$HOME/.terraform.d/plugin-cache"
+        # Scope plugin cache to lockfile hash to avoid accumulating old provider versions
+        TF_PLUGIN_CACHE_DIR="$TF_PLUGIN_CACHE_BASE/${{ steps.plugin-scope.outputs.lock_hash }}"
         echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_ENV
-        mkdir --parents $TF_PLUGIN_CACHE_DIR
+        mkdir --parents "$TF_PLUGIN_CACHE_DIR"
         TG_DOWNLOAD_DIR=${INPUT_TERRAGRUNT_DOWNLOAD//\$HOME/$HOME} # make sure $HOME is expanded
         echo "TG_DOWNLOAD_DIR=$TG_DOWNLOAD_DIR" >> $GITHUB_ENV
+        echo "TG_DOWNLOAD_DIR=$TG_DOWNLOAD_DIR" >> $GITHUB_OUTPUT
         mkdir --parents $TG_DOWNLOAD_DIR
         # clean up to make sure self-hosted runner dirs are clean
         shopt -s dotglob
@@ -225,10 +248,8 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ~/.terraform.d/plugin-cache
-        key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl','**/versions.tf') }}
-        restore-keys: |
-          ${{ runner.os }}-terraform-
+          ${{ env.TF_PLUGIN_CACHE_DIR }}
+        key: ${{ runner.os }}-terraform-${{ steps.plugin-scope.outputs.lock_hash }}
     - name: Cache Terragrunt caches
       if: inputs.skip-caches == 'false'
       uses: actions/cache@v4
