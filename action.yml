@@ -95,7 +95,7 @@ outputs:
     value: ${{ steps.config-caches.outputs.TG_DOWNLOAD_DIR }}
   terraform-plugin-cache-dir:
     description: "Path to the terraform plugin cache directory"
-    value: ${{ env.TF_PLUGIN_CACHE_DIR }}
+    value: ${{ steps.config-caches.outputs.TF_PLUGIN_CACHE_DIR }}
 
 runs:
   using: "composite"
@@ -154,11 +154,21 @@ runs:
       if: inputs.skip-caches == 'false'
       shell: bash
       run: |
-        # Use the same inputs as the cache key to derive a stable folder name.
-        LOCK_HASH="${{ hashFiles('**/.terraform.lock.hcl','**/versions.tf') }}"
-        if [[ -z "$LOCK_HASH" ]]; then
-          LOCK_HASH="no-lock"
+        # Scope hashFiles to working-directory to ensure each stack has independent cache
+        workdir="${{ inputs.working-directory }}"
+        # Normalize path (remove trailing slash, handle '.')
+        workdir="${workdir%/}"
+
+        # Build scoped glob patterns for hashFiles
+        if [[ "$workdir" == "." || -z "$workdir" ]]; then
+          # Root directory - use standard glob
+          LOCK_HASH="${{ hashFiles('**/.terraform.lock.hcl', '**/versions.tf') }}"
+        else
+          # Scoped directory - prefix glob with working-directory path
+          LOCK_HASH="${{ hashFiles(format('{0}/**/.terraform.lock.hcl', inputs.working-directory), format('{0}/**/versions.tf', inputs.working-directory)) }}"
         fi
+
+        [[ -z "$LOCK_HASH" ]] && LOCK_HASH="no-lock"
         echo "lock_hash=$LOCK_HASH" >> "$GITHUB_OUTPUT"
     - name: Build tenv cache paths
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
@@ -235,6 +245,7 @@ runs:
         # Scope plugin cache to lockfile hash to avoid accumulating old provider versions
         TF_PLUGIN_CACHE_DIR="$TF_PLUGIN_CACHE_BASE/${{ steps.plugin-scope.outputs.lock_hash }}"
         echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_ENV
+        echo "TF_PLUGIN_CACHE_DIR=$TF_PLUGIN_CACHE_DIR" >> $GITHUB_OUTPUT
         mkdir --parents "$TF_PLUGIN_CACHE_DIR"
         TG_DOWNLOAD_DIR=${INPUT_TERRAGRUNT_DOWNLOAD//\$HOME/$HOME} # make sure $HOME is expanded
         echo "TG_DOWNLOAD_DIR=$TG_DOWNLOAD_DIR" >> $GITHUB_ENV

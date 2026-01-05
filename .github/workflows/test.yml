@@ -291,3 +291,97 @@ jobs:
         run: |
           terraform init
           terraform plan -out terraform.tfplan # required to generate pr comments
+  test-cache-scoping-stack-a:
+    name: Test cache scoping - Stack A
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      lock-hash: ${{ steps.action.outputs.terraform-plugin-cache-dir }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./
+        id: action
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-cache-scoping/stack-a
+          skip-caches: false
+          enable-debug: true
+      - name: Verify cache directory contains stack-a hash
+        run: |
+          cache_dir="${TF_PLUGIN_CACHE_DIR}"
+          echo "Cache directory: $cache_dir"
+          # Extract hash from path (last component)
+          hash=$(basename "$cache_dir")
+          echo "Hash: $hash"
+          # Verify it's not a generic hash
+          if [[ "$hash" == "no-lock" ]]; then
+            echo "ERROR: Got generic 'no-lock' hash - scoping failed!"
+            exit 1
+          fi
+          echo "✓ Cache is scoped with unique hash: $hash"
+      - name: Initialize and verify provider
+        working-directory: examples/test-cache-scoping/stack-a
+        run: |
+          terraform init
+          # Verify AWS provider version ~5.0.0 was installed
+          terraform version
+  test-cache-scoping-stack-b:
+    name: Test cache scoping - Stack B
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      lock-hash: ${{ steps.action.outputs.terraform-plugin-cache-dir }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./
+        id: action
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-cache-scoping/stack-b
+          skip-caches: false
+          enable-debug: true
+      - name: Verify cache directory contains stack-b hash
+        run: |
+          cache_dir="${TF_PLUGIN_CACHE_DIR}"
+          echo "Cache directory: $cache_dir"
+          # Extract hash from path (last component)
+          hash=$(basename "$cache_dir")
+          echo "Hash: $hash"
+          # Verify it's not a generic hash
+          if [[ "$hash" == "no-lock" ]]; then
+            echo "ERROR: Got generic 'no-lock' hash - scoping failed!"
+            exit 1
+          fi
+          echo "✓ Cache is scoped with unique hash: $hash"
+      - name: Initialize and verify provider
+        working-directory: examples/test-cache-scoping/stack-b
+        run: |
+          terraform init
+          # Verify AWS provider version ~5.5.0 was installed
+          terraform version
+  test-cache-scoping-validation:
+    name: Validate cache scoping - Different hashes
+    runs-on: ubuntu-24.04
+    needs: [test-cache-scoping-stack-a, test-cache-scoping-stack-b]
+    steps:
+      - name: Compare cache directories
+        run: |
+          hash_a="${{ needs.test-cache-scoping-stack-a.outputs.lock-hash }}"
+          hash_b="${{ needs.test-cache-scoping-stack-b.outputs.lock-hash }}"
+          echo "Stack A cache: $hash_a"
+          echo "Stack B cache: $hash_b"
+          if [[ "$hash_a" == "$hash_b" ]]; then
+            echo "ERROR: Both stacks have identical cache directories!"
+            echo "This means cache scoping is NOT working correctly."
+            exit 1
+          fi
+          echo "✓ SUCCESS: Stacks have different cache directories"
+          echo "Cache scoping is working correctly!"
