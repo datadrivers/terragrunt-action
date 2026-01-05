@@ -1,3 +1,10 @@
+## [4.0.3](https://github.com/datadrivers/terragrunt-action/compare/v4.0.2...v4.0.3) (2026-01-05)
+
+
+### Bug Fixes
+
+* scope hash generation to working dir ([#65](https://github.com/datadrivers/terragrunt-action/issues/65)) ([48c4e7a](https://github.com/datadrivers/terragrunt-action/commit/48c4e7a9441938c453ef75afbf5fe6396bd76dbb))
+
 ## [4.0.2](https://github.com/datadrivers/terragrunt-action/compare/v4.0.1...v4.0.2) (2025-12-22)
 
 
