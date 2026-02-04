@@ -34,6 +34,10 @@ inputs:
     description: "GitHub token for posting PR comments"
     required: false
     default: "${{ github.token }}"
+  working-directory:
+    description: "Working directory to run the action in"
+    required: false
+    default: "."
 
 runs:
   using: "composite"
@@ -41,6 +45,7 @@ runs:
     - name: Convert terraform plan files to json (script)
       id: tf-planfiles
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         INPUT_TERRAFORM_PLAN_FILENAME: ${{ inputs.terraform-plan-filename }}
         INPUT_USE_AUTOMATIC_BINARY_DETECTION: ${{ inputs.use-automatic-binary-detection }}

@@ -267,6 +267,37 @@ jobs:
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile-terragrunt"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
           enable-debug: true
+  test-terraform-pr-comment-working-directory:
+    name: TF code in examples/test-pr-comment-working-directory
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-working-directory
+          skip-caches: true
+          enable-debug: true # for prod use false here
+      - working-directory: examples/test-pr-comment-working-directory/root
+        run: |
+          terraform init
+          terraform plan -out terraform.tfplan # required to generate pr comments
+      - name: Add PR comment
+        if: github.event_name == 'pull_request'
+        uses: ./terraform-pr-commenter
+        with:
+          terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-working-directory/root
+          pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment-working-directory"
+          pr-commenter-comment-footer: "Expecting plan of 2 created resources in subdirectory"
+          enable-debug: true
   test-terraform-detect-versions:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt (no PR comment)
     runs-on: ubuntu-24.04
