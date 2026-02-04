@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/datadrivers/terragrunt-action/compare/v4.0.3...v4.1.0) (2026-02-04)
+
+
+### Features
+
+* terragrunt may create plan file in different directories ([#66](https://github.com/datadrivers/terragrunt-action/issues/66)) ([2f0aadc](https://github.com/datadrivers/terragrunt-action/commit/2f0aadc7e7741b7f955c4201f607987944b7d81a))
+
 ## [4.0.3](https://github.com/datadrivers/terragrunt-action/compare/v4.0.2...v4.0.3) (2026-01-05)
 
 
