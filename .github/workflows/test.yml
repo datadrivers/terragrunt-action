@@ -329,6 +329,7 @@ jobs:
       contents: read
     outputs:
       lock-hash: ${{ steps.action.outputs.terraform-plugin-cache-dir }}
+      tg-provider-cache-dir: ${{ steps.action.outputs.terragrunt-provider-cache-dir }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./
@@ -344,7 +345,7 @@ jobs:
       - name: Verify cache directory contains stack-a hash
         run: |
           cache_dir="${TF_PLUGIN_CACHE_DIR}"
-          echo "Cache directory: $cache_dir"
+          echo "TF Plugin Cache directory: $cache_dir"
           # Extract hash from path (last component)
           hash=$(basename "$cache_dir")
           echo "Hash: $hash"
@@ -353,7 +354,24 @@ jobs:
             echo "ERROR: Got generic 'no-lock' hash - scoping failed!"
             exit 1
           fi
-          echo "✓ Cache is scoped with unique hash: $hash"
+          echo "✓ TF Plugin cache is scoped with unique hash: $hash"
+
+          # Verify Terragrunt provider cache directory
+          tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
+          echo "TG Provider Cache directory: $tg_cache_dir"
+          tg_hash=$(basename "$tg_cache_dir")
+          echo "TG Hash: $tg_hash"
+          if [[ "$tg_hash" == "no-lock" ]]; then
+            echo "ERROR: Got generic 'no-lock' hash for TG provider cache - scoping failed!"
+            exit 1
+          fi
+          if [[ "$hash" != "$tg_hash" ]]; then
+            echo "ERROR: TF and TG cache hashes don't match!"
+            echo "TF hash: $hash"
+            echo "TG hash: $tg_hash"
+            exit 1
+          fi
+          echo "✓ TG Provider cache is scoped with same hash: $tg_hash"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-a
         run: |
@@ -367,6 +385,7 @@ jobs:
       contents: read
     outputs:
       lock-hash: ${{ steps.action.outputs.terraform-plugin-cache-dir }}
+      tg-provider-cache-dir: ${{ steps.action.outputs.terragrunt-provider-cache-dir }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./
@@ -382,7 +401,7 @@ jobs:
       - name: Verify cache directory contains stack-b hash
         run: |
           cache_dir="${TF_PLUGIN_CACHE_DIR}"
-          echo "Cache directory: $cache_dir"
+          echo "TF Plugin Cache directory: $cache_dir"
           # Extract hash from path (last component)
           hash=$(basename "$cache_dir")
           echo "Hash: $hash"
@@ -391,7 +410,24 @@ jobs:
             echo "ERROR: Got generic 'no-lock' hash - scoping failed!"
             exit 1
           fi
-          echo "✓ Cache is scoped with unique hash: $hash"
+          echo "✓ TF Plugin cache is scoped with unique hash: $hash"
+
+          # Verify Terragrunt provider cache directory
+          tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
+          echo "TG Provider Cache directory: $tg_cache_dir"
+          tg_hash=$(basename "$tg_cache_dir")
+          echo "TG Hash: $tg_hash"
+          if [[ "$tg_hash" == "no-lock" ]]; then
+            echo "ERROR: Got generic 'no-lock' hash for TG provider cache - scoping failed!"
+            exit 1
+          fi
+          if [[ "$hash" != "$tg_hash" ]]; then
+            echo "ERROR: TF and TG cache hashes don't match!"
+            echo "TF hash: $hash"
+            echo "TG hash: $tg_hash"
+            exit 1
+          fi
+          echo "✓ TG Provider cache is scoped with same hash: $tg_hash"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-b
         run: |
@@ -407,12 +443,27 @@ jobs:
         run: |
           hash_a="${{ needs.test-cache-scoping-stack-a.outputs.lock-hash }}"
           hash_b="${{ needs.test-cache-scoping-stack-b.outputs.lock-hash }}"
-          echo "Stack A cache: $hash_a"
-          echo "Stack B cache: $hash_b"
+          tg_hash_a="${{ needs.test-cache-scoping-stack-a.outputs.tg-provider-cache-dir }}"
+          tg_hash_b="${{ needs.test-cache-scoping-stack-b.outputs.tg-provider-cache-dir }}"
+
+          echo "Stack A TF plugin cache: $hash_a"
+          echo "Stack B TF plugin cache: $hash_b"
+          echo "Stack A TG provider cache: $tg_hash_a"
+          echo "Stack B TG provider cache: $tg_hash_b"
+
+          # Verify TF plugin caches are different
           if [[ "$hash_a" == "$hash_b" ]]; then
-            echo "ERROR: Both stacks have identical cache directories!"
-            echo "This means cache scoping is NOT working correctly."
+            echo "ERROR: Both stacks have identical TF plugin cache directories!"
+            echo "This means TF cache scoping is NOT working correctly."
             exit 1
           fi
-          echo "✓ SUCCESS: Stacks have different cache directories"
-          echo "Cache scoping is working correctly!"
+          echo "✓ SUCCESS: Stacks have different TF plugin cache directories"
+
+          # Verify TG provider caches are different
+          if [[ "$tg_hash_a" == "$tg_hash_b" ]]; then
+            echo "ERROR: Both stacks have identical TG provider cache directories!"
+            echo "This means TG provider cache scoping is NOT working correctly."
+            exit 1
+          fi
+          echo "✓ SUCCESS: Stacks have different TG provider cache directories"
+          echo "Cache scoping is working correctly for both TF and TG!"
