@@ -1,3 +1,10 @@
+## [4.1.2](https://github.com/datadrivers/terragrunt-action/compare/v4.1.1...v4.1.2) (2026-02-09)
+
+
+### Bug Fixes
+
+* **terragrunt:** also cache TG provider cache ([024d8c6](https://github.com/datadrivers/terragrunt-action/commit/024d8c61db3aea23b19ee9d73ae7dc606b3c22ef))
+
 ## [4.1.1](https://github.com/datadrivers/terragrunt-action/compare/v4.1.0...v4.1.1) (2026-02-09)
 
 
