@@ -10,8 +10,8 @@ defaults:
 
 # Use ENV vars to configure parameters for steps
 env:
-  DEFAULT_TERRAFORM_VERSION: 1.14.0
-  DEFAULT_TERRAGRUNT_VERSION: 0.93.11
+  DEFAULT_TERRAFORM_VERSION: 1.14.4
+  DEFAULT_TERRAGRUNT_VERSION: 0.99.1
 
 permissions: {}
 
@@ -356,22 +356,18 @@ jobs:
           fi
           echo "✓ TF Plugin cache is scoped with unique hash: $hash"
 
-          # Verify Terragrunt provider cache directory
+          # Verify Terragrunt provider cache directory is central (not hash-scoped)
           tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
           echo "TG Provider Cache directory: $tg_cache_dir"
-          tg_hash=$(basename "$tg_cache_dir")
-          echo "TG Hash: $tg_hash"
-          if [[ "$tg_hash" == "no-lock" ]]; then
-            echo "ERROR: Got generic 'no-lock' hash for TG provider cache - scoping failed!"
+          # Should be the central cache location without hash suffix
+          expected_path="$HOME/.terragrunt-cache/terragrunt/providers"
+          if [[ "$tg_cache_dir" != "$expected_path" ]]; then
+            echo "ERROR: TG provider cache is not using central location!"
+            echo "Expected: $expected_path"
+            echo "Got: $tg_cache_dir"
             exit 1
           fi
-          if [[ "$hash" != "$tg_hash" ]]; then
-            echo "ERROR: TF and TG cache hashes don't match!"
-            echo "TF hash: $hash"
-            echo "TG hash: $tg_hash"
-            exit 1
-          fi
-          echo "✓ TG Provider cache is scoped with same hash: $tg_hash"
+          echo "✓ TG Provider cache uses central shared location"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-a
         run: |
@@ -412,22 +408,18 @@ jobs:
           fi
           echo "✓ TF Plugin cache is scoped with unique hash: $hash"
 
-          # Verify Terragrunt provider cache directory
+          # Verify Terragrunt provider cache directory is central (not hash-scoped)
           tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
           echo "TG Provider Cache directory: $tg_cache_dir"
-          tg_hash=$(basename "$tg_cache_dir")
-          echo "TG Hash: $tg_hash"
-          if [[ "$tg_hash" == "no-lock" ]]; then
-            echo "ERROR: Got generic 'no-lock' hash for TG provider cache - scoping failed!"
+          # Should be the central cache location without hash suffix
+          expected_path="$HOME/.terragrunt-cache/terragrunt/providers"
+          if [[ "$tg_cache_dir" != "$expected_path" ]]; then
+            echo "ERROR: TG provider cache is not using central location!"
+            echo "Expected: $expected_path"
+            echo "Got: $tg_cache_dir"
             exit 1
           fi
-          if [[ "$hash" != "$tg_hash" ]]; then
-            echo "ERROR: TF and TG cache hashes don't match!"
-            echo "TF hash: $hash"
-            echo "TG hash: $tg_hash"
-            exit 1
-          fi
-          echo "✓ TG Provider cache is scoped with same hash: $tg_hash"
+          echo "✓ TG Provider cache uses central shared location"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-b
         run: |
@@ -451,7 +443,7 @@ jobs:
           echo "Stack A TG provider cache: $tg_hash_a"
           echo "Stack B TG provider cache: $tg_hash_b"
 
-          # Verify TF plugin caches are different
+          # Verify TF plugin caches are different (hash-scoped per stack)
           if [[ "$hash_a" == "$hash_b" ]]; then
             echo "ERROR: Both stacks have identical TF plugin cache directories!"
             echo "This means TF cache scoping is NOT working correctly."
@@ -459,11 +451,166 @@ jobs:
           fi
           echo "✓ SUCCESS: Stacks have different TF plugin cache directories"
 
-          # Verify TG provider caches are different
-          if [[ "$tg_hash_a" == "$tg_hash_b" ]]; then
-            echo "ERROR: Both stacks have identical TG provider cache directories!"
-            echo "This means TG provider cache scoping is NOT working correctly."
+          # Verify TG provider caches are the SAME (central shared cache)
+          if [[ "$tg_hash_a" != "$tg_hash_b" ]]; then
+            echo "ERROR: Stacks have different TG provider cache directories!"
+            echo "TG provider cache should be a central shared location."
+            echo "Stack A: $tg_hash_a"
+            echo "Stack B: $tg_hash_b"
             exit 1
           fi
-          echo "✓ SUCCESS: Stacks have different TG provider cache directories"
-          echo "Cache scoping is working correctly for both TF and TG!"
+          echo "✓ SUCCESS: Both stacks share the same TG provider cache directory"
+          echo "Cache configuration is correct: TF plugin cache is scoped per stack, TG provider cache is shared!"
+  test-cache-populate:
+    name: Test cache population (run 1)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: First run - populate cache
+        uses: ./
+        id: first-run
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt --provider-cache (first run)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          echo "=== First terragrunt init with --provider-cache ==="
+          terragrunt run --all --provider-cache -- plan
+          echo "✓ First init completed"
+      - name: Verify caches were populated
+        run: |
+          tf_cache="${TF_PLUGIN_CACHE_DIR}"
+          tg_cache="${TG_PROVIDER_CACHE_DIR}"
+
+          echo "Checking TF plugin cache: $tf_cache"
+          if [[ ! -d "$tf_cache" ]] || [[ -z "$(ls -A "$tf_cache" 2>/dev/null)" ]]; then
+            echo "ERROR: TF plugin cache was not populated!"
+            exit 1
+          fi
+          echo "✓ TF plugin cache populated"
+
+          echo "Checking TG provider cache: $tg_cache"
+          if [[ ! -d "$tg_cache" ]] || [[ -z "$(ls -A "$tg_cache" 2>/dev/null)" ]]; then
+            echo "ERROR: TG provider cache was not populated!"
+            echo "Make sure --provider-cache flag is used with terragrunt commands"
+            exit 1
+          fi
+
+          provider_count=$(find "$tg_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+          echo "✓ TG provider cache populated with $provider_count providers"
+
+          # Cache will be saved in post action when job completes successfully
+  test-cache-restore:
+    name: Test cache restoration (run 2)
+    runs-on: ubuntu-24.04
+    needs: test-cache-populate
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Second run - should restore cache
+        uses: ./
+        id: second-run
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt --provider-cache (second run - should be faster)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          echo "=== Second terragrunt utilize auto-init with --provider-cache (should use cache) ==="
+          time terragrunt run --all --provider-cache -- plan
+          echo "✓ Second init completed (check time above - should be fast)"
+      - name: Verify caches were restored
+        run: |
+          # Check that cache directories still exist and have content
+          tf_cache="${TF_PLUGIN_CACHE_DIR}"
+          tg_cache="${TG_PROVIDER_CACHE_DIR}"
+
+          echo "Checking TF plugin cache restoration: $tf_cache"
+          tf_provider_count=$(find "$tf_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+          echo "Cached providers in TF plugin cache: $tf_provider_count"
+
+          if [[ "$tf_provider_count" -eq 0 ]]; then
+            echo "ERROR: No providers found in TF cache after second run!"
+            exit 1
+          fi
+          echo "✓ TF plugin cache hit verified"
+
+          echo "Checking TG provider cache restoration: $tg_cache"
+          tg_provider_count=$(find "$tg_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+          echo "Cached providers in TG provider cache: $tg_provider_count"
+
+          if [[ "$tg_provider_count" -eq 0 ]]; then
+            echo "ERROR: No providers found in TG cache after second run!"
+            exit 1
+          fi
+          echo "✓ TG provider cache hit verified"
+          echo "✓ Both caches successfully restored and reused"
+  test-cache-invalidation:
+    name: Test cache invalidation on lockfile change
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: First run - populate cache with stack-a
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ""
+          use-aws-auth: false
+          working-directory: examples/test-cache-scoping/stack-a
+          skip-caches: false
+          enable-debug: true
+      - name: Initialize stack-a
+        working-directory: examples/test-cache-scoping/stack-a
+        run: terraform init
+      - name: Get first cache key
+        run: |
+          first_cache="${TF_PLUGIN_CACHE_DIR}"
+          echo "FIRST_CACHE_DIR=$first_cache" >> $GITHUB_ENV
+          echo "First cache directory: $first_cache"
+      - name: Second run - different lockfile (stack-b)
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-cache-scoping/stack-b
+          skip-caches: false
+          enable-debug: true
+      - name: Initialize stack-b
+        working-directory: examples/test-cache-scoping/stack-b
+        run: terraform init
+      - name: Verify different cache directory
+        run: |
+          second_cache="${TF_PLUGIN_CACHE_DIR}"
+          echo "Second cache directory: $second_cache"
+
+          if [[ "$FIRST_CACHE_DIR" == "$second_cache" ]]; then
+            echo "ERROR: Cache was not invalidated - using same directory!"
+            echo "First:  $FIRST_CACHE_DIR"
+            echo "Second: $second_cache"
+            exit 1
+          fi
+
+          echo "✓ Cache invalidation verified - different lockfile uses different cache"
