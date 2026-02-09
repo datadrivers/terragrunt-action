@@ -28,9 +28,20 @@ tf_convert_plan_to_json(){
   echo "${tfplan_json}" >&3
 }
 
-while IFS= read -r -d '' file; do
-  planfiles_json+=("$(tf_convert_plan_to_json "$file")")
-done < <(find . -type f -name "${INPUT_TERRAFORM_PLAN_FILENAME}" -print0)
+export -f tf_convert_plan_to_json
+export INPUT_USE_AUTOMATIC_BINARY_DETECTION
+
+# Run conversions in parallel
+tmp_output=$(mktemp)
+trap "rm -f $tmp_output" EXIT
+
+find . -type f -name "${INPUT_TERRAFORM_PLAN_FILENAME}" -print0 | \
+  xargs -0 -P "$(nproc)" -I {} bash -c 'tf_convert_plan_to_json "$@" >> '"$tmp_output" _ {}
+
+# Collect results from parallel execution
+if [[ -s "$tmp_output" ]]; then
+  mapfile -t planfiles_json < "$tmp_output"
+fi
 
 content="$(printf "%s\n" "${planfiles_json[@]}")"
 if [[ -n "${content// /}" ]]; then
