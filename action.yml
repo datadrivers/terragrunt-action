@@ -255,9 +255,7 @@ runs:
         echo "TG_DOWNLOAD_DIR=$TG_DOWNLOAD_DIR" >> $GITHUB_OUTPUT
         mkdir --parents $TG_DOWNLOAD_DIR
         # Configure Terragrunt provider cache directory (used with --provider-cache)
-        # Scope to lockfile hash to avoid accumulating old provider versions
-        TG_PROVIDER_CACHE_BASE="$HOME/.terragrunt-cache/terragrunt/providers"
-        TG_PROVIDER_CACHE_DIR="$TG_PROVIDER_CACHE_BASE/${{ steps.plugin-scope.outputs.lock_hash }}"
+        TG_PROVIDER_CACHE_DIR="$HOME/.terragrunt-cache/terragrunt/providers"
         echo "TG_PROVIDER_CACHE_DIR=$TG_PROVIDER_CACHE_DIR" >> $GITHUB_ENV
         echo "TG_PROVIDER_CACHE_DIR=$TG_PROVIDER_CACHE_DIR" >> $GITHUB_OUTPUT
         mkdir --parents "$TG_PROVIDER_CACHE_DIR"
@@ -286,9 +284,9 @@ runs:
       with:
         path: |
           ${{ env.TG_PROVIDER_CACHE_DIR }}
-        key: ${{ runner.os }}-terragrunt-providers-${{ steps.plugin-scope.outputs.lock_hash }}
-        restore-keys: |
-          ${{ runner.os }}-terragrunt-providers-
+        # No restore-keys: requires exact match to prevent cache bloat from accumulating old providers
+        # Cache miss on lock file changes forces clean provider download
+        key: ${{ runner.os }}-tg-providers-${{ inputs.working-directory }}-${{ steps.plugin-scope.outputs.lock_hash }}
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
