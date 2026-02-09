@@ -356,18 +356,19 @@ jobs:
           fi
           echo "✓ TF Plugin cache is scoped with unique hash: $hash"
 
-          # Verify Terragrunt provider cache directory is central (not hash-scoped)
+          # Verify Terragrunt provider cache directory is the shared location under TG_DOWNLOAD_DIR
           tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
+          tg_cache_dir="${tg_cache_dir//\/\//\/}" # normalize double slashes
+          tg_cache_dir="${tg_cache_dir%/}" # trim trailing slash
           echo "TG Provider Cache directory: $tg_cache_dir"
-          # Should be the central cache location without hash suffix
           expected_path="$HOME/.terragrunt-cache/terragrunt/providers"
           if [[ "$tg_cache_dir" != "$expected_path" ]]; then
-            echo "ERROR: TG provider cache is not using central location!"
+            echo "ERROR: TG provider cache is not using shared location!"
             echo "Expected: $expected_path"
             echo "Got: $tg_cache_dir"
             exit 1
           fi
-          echo "✓ TG Provider cache uses central shared location"
+          echo "✓ TG Provider cache uses shared location"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-a
         run: |
@@ -408,18 +409,19 @@ jobs:
           fi
           echo "✓ TF Plugin cache is scoped with unique hash: $hash"
 
-          # Verify Terragrunt provider cache directory is central (not hash-scoped)
+          # Verify Terragrunt provider cache directory is the shared location under TG_DOWNLOAD_DIR
           tg_cache_dir="${TG_PROVIDER_CACHE_DIR}"
+          tg_cache_dir="${tg_cache_dir//\/\//\/}" # normalize double slashes
+          tg_cache_dir="${tg_cache_dir%/}" # trim trailing slash
           echo "TG Provider Cache directory: $tg_cache_dir"
-          # Should be the central cache location without hash suffix
           expected_path="$HOME/.terragrunt-cache/terragrunt/providers"
           if [[ "$tg_cache_dir" != "$expected_path" ]]; then
-            echo "ERROR: TG provider cache is not using central location!"
+            echo "ERROR: TG provider cache is not using shared location!"
             echo "Expected: $expected_path"
             echo "Got: $tg_cache_dir"
             exit 1
           fi
-          echo "✓ TG Provider cache uses central shared location"
+          echo "✓ TG Provider cache uses shared location"
       - name: Initialize and verify provider
         working-directory: examples/test-cache-scoping/stack-b
         run: |
@@ -451,15 +453,15 @@ jobs:
           fi
           echo "✓ SUCCESS: Stacks have different TF plugin cache directories"
 
-          # Verify TG provider caches are the SAME (central shared cache)
+          # Verify TG provider caches are the SAME (shared location)
           if [[ "$tg_hash_a" != "$tg_hash_b" ]]; then
             echo "ERROR: Stacks have different TG provider cache directories!"
-            echo "TG provider cache should be a central shared location."
+            echo "TG provider cache should be a shared location."
             echo "Stack A: $tg_hash_a"
             echo "Stack B: $tg_hash_b"
             exit 1
           fi
-          echo "✓ SUCCESS: Both stacks share the same TG provider cache directory"
+          echo "✓ SUCCESS: Stacks share the same TG provider cache directory"
           echo "Cache configuration is correct: TF plugin cache is scoped per stack, TG provider cache is shared!"
   test-cache-populate:
     name: Test cache population (run 1)
@@ -533,6 +535,8 @@ jobs:
           enable-debug: true
       - name: Initialize with terragrunt --provider-cache (second run - should be faster)
         working-directory: examples/test-pr-comment-terragrunt
+        env:
+          TG_NO_AUTO_INIT: 1 # make sure we rely auto-init to skip provider installation when cache is hit
         run: |
           echo "=== Second terragrunt utilize auto-init with --provider-cache (should use cache) ==="
           time terragrunt run --all --provider-cache -- plan
