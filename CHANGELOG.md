@@ -1,3 +1,10 @@
+## [4.1.1](https://github.com/datadrivers/terragrunt-action/compare/v4.1.0...v4.1.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* **terragrunt:** do not skip auto-init ([#68](https://github.com/datadrivers/terragrunt-action/issues/68)) ([2ee75ac](https://github.com/datadrivers/terragrunt-action/commit/2ee75ac13a39b33756ecba20d9fb20ee9f648448))
+
 # [4.1.0](https://github.com/datadrivers/terragrunt-action/compare/v4.0.3...v4.1.0) (2026-02-04)
 
 
