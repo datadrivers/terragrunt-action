@@ -1,3 +1,10 @@
+## [4.1.4](https://github.com/datadrivers/terragrunt-action/compare/v4.1.3...v4.1.4) (2026-02-09)
+
+
+### Bug Fixes
+
+* **terragrunt:** mitigate cache mismatch after restore ([744ad98](https://github.com/datadrivers/terragrunt-action/commit/744ad98c21c2d9f28f9342f538b40320330cdd19))
+
 ## [4.1.3](https://github.com/datadrivers/terragrunt-action/compare/v4.1.2...v4.1.3) (2026-02-09)
 
 
