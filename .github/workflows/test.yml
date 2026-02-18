@@ -586,7 +586,20 @@ jobs:
             ls -lah "${TG_DOWNLOAD_DIR}" || true
             echo ""
             echo "Searching for .terraform directories:"
-            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | while read -r tf_dir; do
+              echo "Found: $tf_dir"
+              ls -lah "$tf_dir" || true
+              if [[ -d "$tf_dir/providers" ]]; then
+                echo "  Providers directory:"
+                find "$tf_dir/providers" -type f -o -type l 2>/dev/null | head -20 || true
+              fi
+              lock_file="$(dirname "$tf_dir")/.terraform.lock.hcl"
+              if [[ -f "$lock_file" ]]; then
+                echo "  Lock file exists: $lock_file"
+                grep -E 'provider \".*local\"' "$lock_file" || echo "  (no local provider in lock file)"
+              fi
+            done
+            [[ $(find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | wc -l) -eq 0 ]] && echo "No .terraform directories found"
           else
             echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
           fi
@@ -595,11 +608,14 @@ jobs:
           echo "--- TG Provider Cache Directory ---"
           echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
           if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
-            echo "Directory exists, contents:"
-            ls -lah "${TG_PROVIDER_CACHE_DIR}" || true
+            echo "Directory tree:"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -o -type d 2>/dev/null | head -30 || true
+            echo ""
+            echo "Looking for local provider:"
+            find "${TG_PROVIDER_CACHE_DIR}" -name "*local*" 2>/dev/null || echo "No local provider found"
+            echo ""
             provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
-            echo "Provider binaries found: $provider_count"
-            find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+            echo "Total provider binaries: $provider_count"
           else
             echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
           fi
@@ -660,7 +676,20 @@ jobs:
             ls -lah "${TG_DOWNLOAD_DIR}" || true
             echo ""
             echo "Searching for .terraform directories:"
-            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | while read -r tf_dir; do
+              echo "Found: $tf_dir"
+              ls -lah "$tf_dir" || true
+              if [[ -d "$tf_dir/providers" ]]; then
+                echo "  Providers directory:"
+                find "$tf_dir/providers" -type f -o -type l 2>/dev/null | head -20 || true
+              fi
+              lock_file="$(dirname "$tf_dir")/.terraform.lock.hcl"
+              if [[ -f "$lock_file" ]]; then
+                echo "  Lock file exists: $lock_file"
+                grep -E 'provider \".*local\"' "$lock_file" || echo "  (no local provider in lock file)"
+              fi
+            done
+            [[ $(find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | wc -l) -eq 0 ]] && echo "No .terraform directories found"
           else
             echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
           fi
@@ -669,11 +698,14 @@ jobs:
           echo "--- TG Provider Cache Directory ---"
           echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
           if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
-            echo "Directory exists, contents:"
-            ls -lah "${TG_PROVIDER_CACHE_DIR}" || true
+            echo "Directory tree:"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -o -type d 2>/dev/null | head -30 || true
+            echo ""
+            echo "Looking for local provider:"
+            find "${TG_PROVIDER_CACHE_DIR}" -name "*local*" 2>/dev/null || echo "No local provider found"
+            echo ""
             provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
-            echo "Provider binaries found: $provider_count"
-            find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+            echo "Total provider binaries: $provider_count"
           else
             echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
           fi
