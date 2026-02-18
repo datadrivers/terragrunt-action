@@ -1,3 +1,10 @@
+# [4.2.0](https://github.com/datadrivers/terragrunt-action/compare/v4.1.4...v4.2.0) (2026-02-18)
+
+
+### Features
+
+* add granular cache control and fix cache restore test ([f4a3462](https://github.com/datadrivers/terragrunt-action/commit/f4a3462ba4ce421ef6fc3b577c41a1af67b0ae35))
+
 ## [4.1.4](https://github.com/datadrivers/terragrunt-action/compare/v4.1.3...v4.1.4) (2026-02-09)
 
 
