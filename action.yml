@@ -80,6 +80,14 @@ inputs:
     description: "Toggle to skip caches"
     required: false
     default: "false"
+  cache-terraform-plugins:
+    description: "Toggle to cache Terraform provider plugins independently from other caches"
+    required: false
+    default: "true"
+  cache-terragrunt-caches:
+    description: "Toggle to cache Terragrunt download/cache directory independently from other caches"
+    required: false
+    default: "true"
   enable-debug:
     description: "Add debug output to steps"
     required: false
@@ -263,21 +271,19 @@ runs:
         shopt -s dotglob
         cd "${TG_DOWNLOAD_DIR:?}" && rm -rf *
     - name: Cache Terraform plugins
-      if: inputs.skip-caches == 'false'
+      if: inputs.skip-caches == 'false' && inputs.cache-terraform-plugins == 'true' && steps.plugin-scope.outputs.lock_hash != 'no-lock'
       uses: actions/cache@v5
       with:
         path: |
           ${{ env.TF_PLUGIN_CACHE_DIR }}
         key: ${{ runner.os }}-terraform-${{ steps.plugin-scope.outputs.lock_hash }}
     - name: Cache Terragrunt caches
-      if: inputs.skip-caches == 'false'
+      if: inputs.skip-caches == 'false' && inputs.cache-terragrunt-caches == 'true'
       uses: actions/cache@v5
       with:
         path: |
           ${{ env.TG_DOWNLOAD_DIR }}
         key: ${{ runner.os }}-${{ env.TG_DOWNLOAD_DIR }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl', '**/versions.tf') }}${{ inputs.terragrunt-cache-extra-key }}
-        restore-keys: |
-          ${{ runner.os }}-${{ env.TG_DOWNLOAD_DIR }}-${{ hashFiles('**/terragrunt.hcl','**/.terraform.lock.hcl', '**/versions.tf') }}
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"

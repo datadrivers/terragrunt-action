@@ -463,6 +463,82 @@ jobs:
           fi
           echo "✓ SUCCESS: Stacks share the same TG provider cache directory"
           echo "Cache configuration is correct: TF plugin cache is scoped per stack, TG provider cache is shared!"
+  test-cache-inputs-disabled:
+    name: Test cache toggles disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with cache toggles disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: true
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (caches disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
+  test-cache-terraform-only-disabled:
+    name: Test cache toggle - TF plugins disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with TF plugin cache disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          cache-terraform-plugins: false
+          cache-terragrunt-caches: true
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (TF cache disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
+  test-cache-terragrunt-only-disabled:
+    name: Test cache toggle - TG caches disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with TG caches disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          cache-terraform-plugins: true
+          cache-terragrunt-caches: false
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (TG caches disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
   test-cache-populate:
     name: Test cache population (run 1)
     runs-on: ubuntu-24.04
@@ -479,9 +555,8 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
-          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          terragrunt-download: $HOME/.terragrunt-cache/test-cache-shared
           enable-debug: true
       - name: Initialize with terragrunt --provider-cache (first run)
         working-directory: examples/test-pr-comment-terragrunt
@@ -489,17 +564,64 @@ jobs:
           echo "=== First terragrunt init with --provider-cache ==="
           terragrunt run --all --provider-cache -- plan
           echo "✓ First init completed"
+      - name: Debug - Check populated cache contents
+        run: |
+          echo "=== Checking populated cache directories (before cache save) ==="
+
+          echo "--- TF Plugin Cache Directory ---"
+          echo "TF_PLUGIN_CACHE_DIR: ${TF_PLUGIN_CACHE_DIR}"
+          if [[ -d "${TF_PLUGIN_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TF_PLUGIN_CACHE_DIR}" || true
+            find "${TF_PLUGIN_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "WARN: TF_PLUGIN_CACHE_DIR does not exist (expected for Terragrunt-only usage)"
+          fi
+
+          echo ""
+          echo "--- TG Download Directory ---"
+          echo "TG_DOWNLOAD_DIR: ${TG_DOWNLOAD_DIR}"
+          if [[ -d "${TG_DOWNLOAD_DIR}" ]]; then
+            echo "Directory exists, top-level contents:"
+            ls -lah "${TG_DOWNLOAD_DIR}" || true
+            echo ""
+            echo "Searching for .terraform directories:"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | while read -r tf_dir; do
+              echo "Found: $tf_dir"
+              ls -lah "$tf_dir" || true
+              if [[ -d "$tf_dir/providers" ]]; then
+                echo "  Providers directory:"
+                find "$tf_dir/providers" -type f -o -type l 2>/dev/null | head -20 || true
+              fi
+              lock_file="$(dirname "$tf_dir")/.terraform.lock.hcl"
+              if [[ -f "$lock_file" ]]; then
+                echo "  Lock file exists: $lock_file"
+                grep -E 'provider \".*local\"' "$lock_file" || echo "  (no local provider in lock file)"
+              fi
+            done
+            [[ $(find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | wc -l) -eq 0 ]] && echo "No .terraform directories found"
+          else
+            echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Provider Cache Directory ---"
+          echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
+          if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
+            echo "Directory tree:"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -o -type d 2>/dev/null | head -30 || true
+            echo ""
+            echo "Looking for local provider:"
+            find "${TG_PROVIDER_CACHE_DIR}" -name "*local*" 2>/dev/null || echo "No local provider found"
+            echo ""
+            provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+            echo "Total provider binaries: $provider_count"
+          else
+            echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
+          fi
       - name: Verify caches were populated
         run: |
-          tf_cache="${TF_PLUGIN_CACHE_DIR}"
           tg_cache="${TG_PROVIDER_CACHE_DIR}"
-
-          echo "Checking TF plugin cache: $tf_cache"
-          if [[ ! -d "$tf_cache" ]] || [[ -z "$(ls -A "$tf_cache" 2>/dev/null)" ]]; then
-            echo "ERROR: TF plugin cache was not populated!"
-            exit 1
-          fi
-          echo "✓ TF plugin cache populated"
 
           echo "Checking TG provider cache: $tg_cache"
           if [[ ! -d "$tg_cache" ]] || [[ -z "$(ls -A "$tg_cache" 2>/dev/null)" ]]; then
@@ -529,33 +651,76 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
-          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          terragrunt-download: $HOME/.terragrunt-cache/test-cache-shared
           enable-debug: true
-      - name: Initialize with terragrunt --provider-cache (second run - should be faster)
+      - name: Debug - Check restored cache contents
+        run: |
+          echo "=== Checking restored cache directories ==="
+
+          echo "--- TF Plugin Cache Directory ---"
+          echo "TF_PLUGIN_CACHE_DIR: ${TF_PLUGIN_CACHE_DIR}"
+          if [[ -d "${TF_PLUGIN_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TF_PLUGIN_CACHE_DIR}" || true
+            find "${TF_PLUGIN_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "ERROR: TF_PLUGIN_CACHE_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Download Directory ---"
+          echo "TG_DOWNLOAD_DIR: ${TG_DOWNLOAD_DIR}"
+          if [[ -d "${TG_DOWNLOAD_DIR}" ]]; then
+            echo "Directory exists, top-level contents:"
+            ls -lah "${TG_DOWNLOAD_DIR}" || true
+            echo ""
+            echo "Searching for .terraform directories:"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | while read -r tf_dir; do
+              echo "Found: $tf_dir"
+              ls -lah "$tf_dir" || true
+              if [[ -d "$tf_dir/providers" ]]; then
+                echo "  Providers directory:"
+                find "$tf_dir/providers" -type f -o -type l 2>/dev/null | head -20 || true
+              fi
+              lock_file="$(dirname "$tf_dir")/.terraform.lock.hcl"
+              if [[ -f "$lock_file" ]]; then
+                echo "  Lock file exists: $lock_file"
+                grep -E 'provider \".*local\"' "$lock_file" || echo "  (no local provider in lock file)"
+              fi
+            done
+            [[ $(find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" 2>/dev/null | wc -l) -eq 0 ]] && echo "No .terraform directories found"
+          else
+            echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Provider Cache Directory ---"
+          echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
+          if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
+            echo "Directory tree:"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -o -type d 2>/dev/null | head -30 || true
+            echo ""
+            echo "Looking for local provider:"
+            find "${TG_PROVIDER_CACHE_DIR}" -name "*local*" 2>/dev/null || echo "No local provider found"
+            echo ""
+            provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+            echo "Total provider binaries: $provider_count"
+          else
+            echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
+          fi
+      - name: Verify cache restored - run plan without init
         working-directory: examples/test-pr-comment-terragrunt
         env:
-          TG_NO_AUTO_INIT: 1 # make sure we rely auto-init to skip provider installation when cache is hit
+          TG_NO_AUTO_INIT: 1 # Ensure we rely on restored cache - will fail if cache not restored properly
         run: |
-          echo "=== Second terragrunt utilize auto-init with --provider-cache (should use cache) ==="
+          echo "=== Running plan with TG_NO_AUTO_INIT=1 (no init, cache must be complete) ==="
           time terragrunt run --all --provider-cache -- plan
-          echo "✓ Second init completed (check time above - should be fast)"
+          echo "✓ Plan succeeded - cache was properly restored!"
       - name: Verify caches were restored
         run: |
           # Check that cache directories still exist and have content
-          tf_cache="${TF_PLUGIN_CACHE_DIR}"
           tg_cache="${TG_PROVIDER_CACHE_DIR}"
-
-          echo "Checking TF plugin cache restoration: $tf_cache"
-          tf_provider_count=$(find "$tf_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
-          echo "Cached providers in TF plugin cache: $tf_provider_count"
-
-          if [[ "$tf_provider_count" -eq 0 ]]; then
-            echo "ERROR: No providers found in TF cache after second run!"
-            exit 1
-          fi
-          echo "✓ TF plugin cache hit verified"
 
           echo "Checking TG provider cache restoration: $tg_cache"
           tg_provider_count=$(find "$tg_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
@@ -566,7 +731,7 @@ jobs:
             exit 1
           fi
           echo "✓ TG provider cache hit verified"
-          echo "✓ Both caches successfully restored and reused"
+          echo "✓ TG provider cache successfully restored and reused"
   test-cache-invalidation:
     name: Test cache invalidation on lockfile change
     runs-on: ubuntu-24.04

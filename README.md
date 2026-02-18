@@ -1,11 +1,11 @@
-# Github Action to run terraform and terragrunt
+# GitHub Action to run Terraform and Terragrunt
 
-> Note: As of October 2025 this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). No changes to the input interface are required; specify `terraform-version` / `terragrunt-version` as before.
-> Set TENV_GITHUB_TOKEN environment variable to ${{ github.token }} for tenv API calls to github (e.g. to avoid rate limits).
+> Note: As of October 2025, this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). No changes to the input interface are required; specify `terraform-version` / `terragrunt-version` as before.
+> Set the TENV_GITHUB_TOKEN environment variable to ${{ github.token }} for tenv API calls to GitHub (e.g. to avoid rate limits).
 
 ## Examples
 
-### Run terraform (without terragrunt)
+### Run Terraform (without Terragrunt)
 
 Common minimal workflow example. Leave `terraform-version` blank to let tenv auto-detect from `.terraform-version` or `.tool-versions`.
 
@@ -44,7 +44,7 @@ jobs:
             terraform plan
 ```
 
-### Complete workflow with custom scripts to run terraform plan via terragrunt
+### Complete workflow with custom scripts to run Terraform plan via Terragrunt
 
 ```yaml
 name: Terraform Validate dev
@@ -103,7 +103,7 @@ jobs:
             terragrunt run --all -- plan -out terraform.tfplan
 ```
 
-### Run terraform validate and plan via terragrunt
+### Run Terraform validate and plan via Terragrunt
 
 ```yaml
       - name: run terraform
@@ -122,7 +122,7 @@ jobs:
             terragrunt run --all -- plan
 ```
 
-### Run terraform plan via terragrunt and gcloud auth
+### Run Terraform plan via Terragrunt and gcloud auth
 
 ```yaml
       - name: run terraform
@@ -141,9 +141,9 @@ jobs:
             terragrunt run --all -- plan
 ```
 
-### Run terraform and create PR comment for plan on pull_request
+### Run Terraform and create a PR comment for plan on pull_request
 
-terraform commands have to make sure to create a plan file (e.g. `terraform.tfplan`) for the PR commenter action to pick up and convert to JSON for the comment.:
+Terraform commands must create a plan file (e.g. `terraform.tfplan`) for the PR commenter action to pick up and convert to JSON for the comment:
 
 ```yaml
 jobs:
