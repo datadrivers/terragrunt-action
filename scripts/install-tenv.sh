@@ -53,13 +53,24 @@ case "$ARCH" in
   *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
  esac
 
-DEB_FILE="tenv_${TENV_VERSION}_${ARCH_DEB}.deb"
-DOWNLOAD_URL="https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/${DEB_FILE}"
+# Use cached location for .deb file (allow override via env var)
+CACHE_DIR="${TENV_INSTALLER_CACHE_DIR:-${HOME}/.cache/tenv-installer}"
+mkdir -p "${CACHE_DIR}"
+DEB_FILENAME="tenv_${TENV_VERSION}_${ARCH_DEB}.deb"
+DEB_FILE="${CACHE_DIR}/${DEB_FILENAME}"
 
-bin_status=$(curl --retry 3 -sSL -w '%{http_code}' -o "${DEB_FILE}" "${DOWNLOAD_URL}" || echo "000")
-if ! [[ "$bin_status" =~ ^2 ]]; then
-  echo "Download failed with HTTP status ${bin_status}" >&2
-  exit 1
+# Download only if not already cached
+if [[ -f "${DEB_FILE}" ]]; then
+  echo "Using cached tenv installer: ${DEB_FILE}"
+else
+  echo "Downloading tenv ${TENV_VERSION} for ${ARCH_DEB}..."
+  DOWNLOAD_URL="https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/${DEB_FILENAME}"
+  bin_status=$(curl --retry 3 -sSL -w '%{http_code}' -o "${DEB_FILE}" "${DOWNLOAD_URL}" || echo "000")
+  if ! [[ "$bin_status" =~ ^2 ]]; then
+    echo "Download failed with HTTP status ${bin_status}" >&2
+    exit 1
+  fi
+  echo "Download complete"
 fi
 
 if command -v sudo >/dev/null 2>&1; then

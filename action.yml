@@ -111,6 +111,16 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Set cache paths
+      shell: bash
+      run: |
+        echo "TENV_INSTALLER_CACHE_DIR=$HOME/.cache/tenv-installer" >> "$GITHUB_ENV"
+    - name: Cache tenv installer
+      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.TENV_INSTALLER_CACHE_DIR }}
+        key: ${{ runner.os }}-tenv-installer-${{ inputs.tenv-version }}-${{ runner.arch }}
     - name: Install tenv
       if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
