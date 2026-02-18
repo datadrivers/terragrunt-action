@@ -565,6 +565,48 @@ jobs:
           terragrunt run --all --provider-cache -- init
           terragrunt run --all --provider-cache -- plan
           echo "✓ First init completed"
+      - name: Debug - Check populated cache contents
+        run: |
+          echo "=== Checking populated cache directories (before cache save) ==="
+
+          echo "--- TF Plugin Cache Directory ---"
+          echo "TF_PLUGIN_CACHE_DIR: ${TF_PLUGIN_CACHE_DIR}"
+          if [[ -d "${TF_PLUGIN_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TF_PLUGIN_CACHE_DIR}" || true
+            find "${TF_PLUGIN_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "WARN: TF_PLUGIN_CACHE_DIR does not exist (expected for Terragrunt-only usage)"
+          fi
+
+          echo ""
+          echo "--- TG Download Directory ---"
+          echo "TG_DOWNLOAD_DIR: ${TG_DOWNLOAD_DIR}"
+          if [[ -d "${TG_DOWNLOAD_DIR}" ]]; then
+            echo "Directory exists, top-level contents:"
+            ls -lah "${TG_DOWNLOAD_DIR}" || true
+            echo ""
+            echo "Searching for .terraform directories:"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
+            echo ""
+            echo "Searching for .terraform.lock.hcl files:"
+            find "${TG_DOWNLOAD_DIR}" -type f -name ".terraform.lock.hcl" -exec echo "Found: {}" \; -exec head -20 {} \; 2>/dev/null || echo "No lock files found"
+          else
+            echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Provider Cache Directory ---"
+          echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
+          if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TG_PROVIDER_CACHE_DIR}" || true
+            provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+            echo "Provider binaries found: $provider_count"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
+          fi
       - name: Verify caches were populated
         run: |
           tg_cache="${TG_PROVIDER_CACHE_DIR}"
@@ -600,14 +642,58 @@ jobs:
           skip-caches: false
           terragrunt-download: $HOME/.terragrunt-cache/test-cache-shared
           enable-debug: true
+      - name: Debug - Check restored cache contents
+        run: |
+          echo "=== Checking restored cache directories ==="
+
+          echo "--- TF Plugin Cache Directory ---"
+          echo "TF_PLUGIN_CACHE_DIR: ${TF_PLUGIN_CACHE_DIR}"
+          if [[ -d "${TF_PLUGIN_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TF_PLUGIN_CACHE_DIR}" || true
+            find "${TF_PLUGIN_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "ERROR: TF_PLUGIN_CACHE_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Download Directory ---"
+          echo "TG_DOWNLOAD_DIR: ${TG_DOWNLOAD_DIR}"
+          if [[ -d "${TG_DOWNLOAD_DIR}" ]]; then
+            echo "Directory exists, top-level contents:"
+            ls -lah "${TG_DOWNLOAD_DIR}" || true
+            echo ""
+            echo "Searching for .terraform directories:"
+            find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
+            echo ""
+            echo "Searching for .terraform.lock.hcl files:"
+            find "${TG_DOWNLOAD_DIR}" -type f -name ".terraform.lock.hcl" -exec echo "Found: {}" \; -exec cat {} \; 2>/dev/null || echo "No lock files found"
+          else
+            echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
+          fi
+
+          echo ""
+          echo "--- TG Provider Cache Directory ---"
+          echo "TG_PROVIDER_CACHE_DIR: ${TG_PROVIDER_CACHE_DIR}"
+          if [[ -d "${TG_PROVIDER_CACHE_DIR}" ]]; then
+            echo "Directory exists, contents:"
+            ls -lah "${TG_PROVIDER_CACHE_DIR}" || true
+            provider_count=$(find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
+            echo "Provider binaries found: $provider_count"
+            find "${TG_PROVIDER_CACHE_DIR}" -type f -name "terraform-provider-*" || true
+          else
+            echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
+          fi
       - name: Initialize with terragrunt --provider-cache (second run - should be faster)
         working-directory: examples/test-pr-comment-terragrunt
         env:
-          TG_NO_AUTO_INIT: 1 # make sure we rely auto-init to skip provider installation when cache is hit
+          TG_NO_AUTO_INIT: 1 # make sure we restore cache and hit to skip tg-auto-init provider installation
         run: |
-          echo "=== Second terragrunt utilize auto-init with --provider-cache (should use cache) ==="
+          echo "=== Second terragrunt init with --provider-cache (should use cache) ==="
+          time terragrunt run --all --provider-cache -- init
+          echo "=== Second terragrunt plan ==="
           time terragrunt run --all --provider-cache -- plan
-          echo "✓ Second init completed (check time above - should be fast)"
+          echo "✓ Second run completed (init should be fast due to cached providers)"
       - name: Verify caches were restored
         run: |
           # Check that cache directories still exist and have content
