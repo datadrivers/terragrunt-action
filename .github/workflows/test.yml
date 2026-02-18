@@ -562,7 +562,6 @@ jobs:
         working-directory: examples/test-pr-comment-terragrunt
         run: |
           echo "=== First terragrunt init with --provider-cache ==="
-          terragrunt run --all --provider-cache -- init
           terragrunt run --all --provider-cache -- plan
           echo "✓ First init completed"
       - name: Debug - Check populated cache contents
@@ -588,9 +587,6 @@ jobs:
             echo ""
             echo "Searching for .terraform directories:"
             find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
-            echo ""
-            echo "Searching for .terraform.lock.hcl files:"
-            find "${TG_DOWNLOAD_DIR}" -type f -name ".terraform.lock.hcl" -exec echo "Found: {}" \; -exec head -20 {} \; 2>/dev/null || echo "No lock files found"
           else
             echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
           fi
@@ -665,9 +661,6 @@ jobs:
             echo ""
             echo "Searching for .terraform directories:"
             find "${TG_DOWNLOAD_DIR}" -type d -name ".terraform" -exec echo "Found: {}" \; -exec ls -lah {} \; 2>/dev/null || echo "No .terraform directories found"
-            echo ""
-            echo "Searching for .terraform.lock.hcl files:"
-            find "${TG_DOWNLOAD_DIR}" -type f -name ".terraform.lock.hcl" -exec echo "Found: {}" \; -exec cat {} \; 2>/dev/null || echo "No lock files found"
           else
             echo "ERROR: TG_DOWNLOAD_DIR does not exist!"
           fi
@@ -684,16 +677,14 @@ jobs:
           else
             echo "ERROR: TG_PROVIDER_CACHE_DIR does not exist!"
           fi
-      - name: Initialize with terragrunt --provider-cache (second run - should be faster)
+      - name: Verify cache restored - run plan without init
         working-directory: examples/test-pr-comment-terragrunt
         env:
-          TG_NO_AUTO_INIT: 1 # make sure we restore cache and hit to skip tg-auto-init provider installation
+          TG_NO_AUTO_INIT: 1 # Ensure we rely on restored cache - will fail if cache not restored properly
         run: |
-          echo "=== Second terragrunt init with --provider-cache (should use cache) ==="
-          time terragrunt run --all --provider-cache -- init
-          echo "=== Second terragrunt plan ==="
+          echo "=== Running plan with TG_NO_AUTO_INIT=1 (no init, cache must be complete) ==="
           time terragrunt run --all --provider-cache -- plan
-          echo "✓ Second run completed (init should be fast due to cached providers)"
+          echo "✓ Plan succeeded - cache was properly restored!"
       - name: Verify caches were restored
         run: |
           # Check that cache directories still exist and have content
