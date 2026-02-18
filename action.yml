@@ -111,21 +111,29 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Set cache paths
+    - name: Resolve tenv version
+      id: resolve-tenv-version
       shell: bash
+      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      env:
+        INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
       run: |
+        RESOLVED_VERSION=$(bash "${{ github.action_path }}/scripts/resolve-tenv-version.sh")
+        echo "resolved_version=$RESOLVED_VERSION" >> "$GITHUB_OUTPUT"
+        echo "TENV_VERSION=$RESOLVED_VERSION" >> "$GITHUB_ENV"
+        echo "Resolved tenv version: $RESOLVED_VERSION"
         echo "TENV_INSTALLER_CACHE_DIR=$HOME/.cache/tenv-installer" >> "$GITHUB_ENV"
     - name: Cache tenv installer
-      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
+      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true' && (inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled')
       uses: actions/cache@v5
       with:
         path: ${{ env.TENV_INSTALLER_CACHE_DIR }}
-        key: ${{ runner.os }}-tenv-installer-${{ inputs.tenv-version }}-${{ runner.arch }}
+        key: ${{ runner.os }}-${{ runner.arch }}-tenv-installer-${{ steps.resolve-tenv-version.outputs.resolved_version }}
     - name: Install tenv
       if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
       env:
-        INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
+        INPUT_TENV_VERSION: ${{ env.TENV_VERSION }}
       run: |
         bash "${{ github.action_path }}/scripts/install-tenv.sh"
     - name: Set tenv root path
