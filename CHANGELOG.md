@@ -1,3 +1,15 @@
+# [4.3.0](https://github.com/datadrivers/terragrunt-action/compare/v4.2.0...v4.3.0) (2026-02-18)
+
+
+### Bug Fixes
+
+* use tenv version for cache invalidation ([996e5cb](https://github.com/datadrivers/terragrunt-action/commit/996e5cb35dbcf8419e6f4bc9749fbf7feb6d9cb1))
+
+
+### Features
+
+* **tenv:** cache binary download for tenv install ([be05666](https://github.com/datadrivers/terragrunt-action/commit/be0566686f96357aaa0bc7e045061630239fe369))
+
 # [4.2.0](https://github.com/datadrivers/terragrunt-action/compare/v4.1.4...v4.2.0) (2026-02-18)
 
 
