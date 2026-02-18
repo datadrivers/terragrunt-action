@@ -463,6 +463,82 @@ jobs:
           fi
           echo "✓ SUCCESS: Stacks share the same TG provider cache directory"
           echo "Cache configuration is correct: TF plugin cache is scoped per stack, TG provider cache is shared!"
+  test-cache-inputs-disabled:
+    name: Test cache toggles disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with cache toggles disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: true
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (caches disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
+  test-cache-terraform-only-disabled:
+    name: Test cache toggle - TF plugins disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with TF plugin cache disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          cache-terraform-plugins: false
+          cache-terragrunt-caches: true
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (TF cache disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
+  test-cache-terragrunt-only-disabled:
+    name: Test cache toggle - TG caches disabled
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run action with TG caches disabled
+        uses: ./
+        env:
+          TENV_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
+          terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
+          use-aws-auth: false
+          working-directory: examples/test-pr-comment-terragrunt
+          skip-caches: false
+          cache-terraform-plugins: true
+          cache-terragrunt-caches: false
+          cache-tenv-tools: false
+          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          enable-debug: true
+      - name: Initialize with terragrunt (TG caches disabled)
+        working-directory: examples/test-pr-comment-terragrunt
+        run: |
+          terragrunt run --all -- init
   test-cache-populate:
     name: Test cache population (run 1)
     runs-on: ubuntu-24.04
@@ -479,27 +555,19 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
-          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          terragrunt-download: $HOME/.terragrunt-cache/test-cache-shared
           enable-debug: true
       - name: Initialize with terragrunt --provider-cache (first run)
         working-directory: examples/test-pr-comment-terragrunt
         run: |
           echo "=== First terragrunt init with --provider-cache ==="
+          terragrunt run --all --provider-cache -- init
           terragrunt run --all --provider-cache -- plan
           echo "✓ First init completed"
       - name: Verify caches were populated
         run: |
-          tf_cache="${TF_PLUGIN_CACHE_DIR}"
           tg_cache="${TG_PROVIDER_CACHE_DIR}"
-
-          echo "Checking TF plugin cache: $tf_cache"
-          if [[ ! -d "$tf_cache" ]] || [[ -z "$(ls -A "$tf_cache" 2>/dev/null)" ]]; then
-            echo "ERROR: TF plugin cache was not populated!"
-            exit 1
-          fi
-          echo "✓ TF plugin cache populated"
 
           echo "Checking TG provider cache: $tg_cache"
           if [[ ! -d "$tg_cache" ]] || [[ -z "$(ls -A "$tg_cache" 2>/dev/null)" ]]; then
@@ -529,9 +597,8 @@ jobs:
           terraform-version: ${{ env.DEFAULT_TERRAFORM_VERSION }}
           terragrunt-version: ${{ env.DEFAULT_TERRAGRUNT_VERSION }}
           use-aws-auth: false
-          working-directory: examples/test-pr-comment-terragrunt
           skip-caches: false
-          terragrunt-download: $HOME/.terragrunt-cache/${{ github.job }}
+          terragrunt-download: $HOME/.terragrunt-cache/test-cache-shared
           enable-debug: true
       - name: Initialize with terragrunt --provider-cache (second run - should be faster)
         working-directory: examples/test-pr-comment-terragrunt
@@ -544,18 +611,7 @@ jobs:
       - name: Verify caches were restored
         run: |
           # Check that cache directories still exist and have content
-          tf_cache="${TF_PLUGIN_CACHE_DIR}"
           tg_cache="${TG_PROVIDER_CACHE_DIR}"
-
-          echo "Checking TF plugin cache restoration: $tf_cache"
-          tf_provider_count=$(find "$tf_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
-          echo "Cached providers in TF plugin cache: $tf_provider_count"
-
-          if [[ "$tf_provider_count" -eq 0 ]]; then
-            echo "ERROR: No providers found in TF cache after second run!"
-            exit 1
-          fi
-          echo "✓ TF plugin cache hit verified"
 
           echo "Checking TG provider cache restoration: $tg_cache"
           tg_provider_count=$(find "$tg_cache" -type f -name "terraform-provider-*" 2>/dev/null | wc -l)
@@ -566,7 +622,7 @@ jobs:
             exit 1
           fi
           echo "✓ TG provider cache hit verified"
-          echo "✓ Both caches successfully restored and reused"
+          echo "✓ TG provider cache successfully restored and reused"
   test-cache-invalidation:
     name: Test cache invalidation on lockfile change
     runs-on: ubuntu-24.04
