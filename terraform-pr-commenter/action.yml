@@ -56,7 +56,7 @@ runs:
 
     - name: Add PR comment for terraform plan changes
       if: steps.tf-planfiles.outputs.terraform_planfiles_json
-      uses: liatrio/terraform-change-pr-commenter@v1.14.0
+      uses: liatrio/terraform-change-pr-commenter@c8ccafe4ce3ed9547b2d3517dde0f97be56893f8 #v1.14.2
       continue-on-error: ${{ inputs.continue-on-error }}
       with:
         include-plan-job-summary: ${{ inputs.include-plan-job-summary }}
