@@ -125,7 +125,7 @@ runs:
         echo "TENV_INSTALLER_CACHE_DIR=$HOME/.cache/tenv-installer" >> "$GITHUB_ENV"
     - name: Cache tenv installer
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true' && (inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled')
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ${{ env.TENV_INSTALLER_CACHE_DIR }}
         key: ${{ runner.os }}-${{ runner.arch }}-tenv-installer-${{ steps.resolve-tenv-version.outputs.resolved_version }}
@@ -229,7 +229,7 @@ runs:
         echo "EOF" >> "$GITHUB_ENV"
     - name: Cache tenv managed tool versions
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ${{ env.TENV_CACHE_PATHS }}
         key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
@@ -290,14 +290,14 @@ runs:
         cd "${TG_DOWNLOAD_DIR:?}" && rm -rf *
     - name: Cache Terraform plugins
       if: inputs.skip-caches == 'false' && inputs.cache-terraform-plugins == 'true' && steps.plugin-scope.outputs.lock_hash != 'no-lock'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           ${{ env.TF_PLUGIN_CACHE_DIR }}
         key: ${{ runner.os }}-terraform-${{ steps.plugin-scope.outputs.lock_hash }}
     - name: Cache Terragrunt caches
       if: inputs.skip-caches == 'false' && inputs.cache-terragrunt-caches == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           ${{ env.TG_DOWNLOAD_DIR }}
@@ -305,7 +305,7 @@ runs:
     - id: "gcloud-auth"
       if: inputs.use-gcloud-auth == 'true'
       name: "Authenticate to GCP"
-      uses: "google-github-actions/auth@v3"
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
       with:
         project_id: ${{ inputs.gcp-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
@@ -313,7 +313,7 @@ runs:
     - id: "aws-auth"
       if: inputs.use-aws-auth == 'true'
       name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v6
+      uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.aws-role-to-assume }}
