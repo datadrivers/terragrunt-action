@@ -23,13 +23,6 @@
       "semanticCommitType": "{{#if (equals updateType 'patch')}}fix{{else}}feat{{/if}}"
     },
     {
-      "description": "Updates for Terragrunt",
-      "matchManagers": ["terragrunt-version"],
-      "matchNewValue": "1.0.0",
-      "automerge": true,
-      "dependencyDashboardApproval": false
-    },
-    {
       "description": "Only update upper-bound constraints for Terraform providers to protect the lockfile, forcing 'tf init -upgrade' to stick strictly to the max version approved by Renovate which follows minReleaseAge rather than fetching the latest registry version",
       "matchManagers": ["terraform"],
       "matchDepTypes": ["required_provider"],
