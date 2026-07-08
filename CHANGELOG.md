@@ -1,3 +1,10 @@
+# [4.4.0](https://github.com/datadrivers/terragrunt-action/compare/v4.3.1...v4.4.0) (2026-07-08)
+
+
+### Features
+
+* **tenv:** curl installation and verification ([522ff20](https://github.com/datadrivers/terragrunt-action/commit/522ff208eeb62f9a5ec784de6a7fe9a8879d4c9d))
+
 ## [4.3.1](https://github.com/datadrivers/terragrunt-action/compare/v4.3.0...v4.3.1) (2026-04-28)
 
 
