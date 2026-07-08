@@ -106,58 +106,22 @@ download_file() {
   return 0
 }
 
-download_file "tenv_${TENV_VERSION}_checksums.txt" || exit 1
-download_file "${TAR_FILENAME}" || exit 1
-
 if ! command -v openssl >/dev/null 2>&1; then
   echo "ERROR: openssl is not installed but signature verification is required." >&2
   exit 1
 fi
 
-download_file "tenv_${TENV_VERSION}_checksums.txt.sig" || exit 1
-download_file "tenv_${TENV_VERSION}_checksums.txt.pem" || exit 1
+download_file "${TAR_FILENAME}" || exit 1
 download_file "${TAR_FILENAME}.sig" || exit 1
 download_file "${TAR_FILENAME}.pem" || exit 1
 
 echo "Verifying signatures with openssl..."
-verify_openssl "${CACHE_DIR}/tenv_${TENV_VERSION}_checksums.txt" \
-               "${CACHE_DIR}/tenv_${TENV_VERSION}_checksums.txt.sig" \
-               "${CACHE_DIR}/tenv_${TENV_VERSION}_checksums.txt.pem" || exit 1
 
 verify_openssl "${CACHE_DIR}/${TAR_FILENAME}" \
                "${CACHE_DIR}/${TAR_FILENAME}.sig" \
                "${CACHE_DIR}/${TAR_FILENAME}.pem" || exit 1
 
 echo "OpenSSL signature verification succeeded!"
-
-SHASUM_CMD=""
-if command -v shasum >/dev/null 2>&1; then
-  SHASUM_CMD="shasum -a 256"
-elif command -v sha256sum >/dev/null 2>&1; then
-  SHASUM_CMD="sha256sum"
-fi
-
-if [[ -n "$SHASUM_CMD" ]]; then
-  echo "Verifying checksums..."
-  (
-    cd "$CACHE_DIR"
-    if ! $SHASUM_CMD -c "tenv_${TENV_VERSION}_checksums.txt" --ignore-missing >/dev/null 2>&1; then
-      # Fallback for systems/versions of shasum without --ignore-missing support
-      expected_sha=$(grep "${TAR_FILENAME}" "tenv_${TENV_VERSION}_checksums.txt" | awk '{print $1}')
-      if [[ -n "$expected_sha" ]]; then
-        actual_sha=$($SHASUM_CMD "${TAR_FILENAME}" | awk '{print $1}')
-        if [[ "$expected_sha" != "$actual_sha" ]]; then
-          echo "Checksum verification failed for ${TAR_FILENAME}!" >&2
-          exit 1
-        fi
-      else
-        echo "Warning: ${TAR_FILENAME} not found in checksums file." >&2
-      fi
-    fi
-  )
-else
-  echo "Warning: shasum/sha256sum not found, skipping checksum verification" >&2
-fi
 
 INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
