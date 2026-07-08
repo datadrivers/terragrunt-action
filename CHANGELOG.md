@@ -1,3 +1,10 @@
+## [4.4.2](https://github.com/datadrivers/terragrunt-action/compare/v4.4.1...v4.4.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **tenv:** improve installation path handling ([62425d4](https://github.com/datadrivers/terragrunt-action/commit/62425d4bb54e16ea7fba13b1a679ccdc1f4b6d90))
+
 ## [4.4.1](https://github.com/datadrivers/terragrunt-action/compare/v4.4.0...v4.4.1) (2026-07-08)
 
 
