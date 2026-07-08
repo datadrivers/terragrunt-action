@@ -1,3 +1,10 @@
+## [4.4.1](https://github.com/datadrivers/terragrunt-action/compare/v4.4.0...v4.4.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* **ubuntu:** Update dependency ubuntu to v24 ([#80](https://github.com/datadrivers/terragrunt-action/issues/80)) ([befb5c8](https://github.com/datadrivers/terragrunt-action/commit/befb5c89398803a548e196305e5277528a55f784))
+
 # [4.4.0](https://github.com/datadrivers/terragrunt-action/compare/v4.3.1...v4.4.0) (2026-07-08)
 
 
