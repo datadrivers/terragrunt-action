@@ -159,26 +159,26 @@ else
   echo "Warning: shasum/sha256sum not found, skipping checksum verification" >&2
 fi
 
-find_writable_path() {
-  local IFS=':'
-  for dir in $PATH; do
-    [[ -z "$dir" ]] && continue
-    if [[ -d "$dir" && -w "$dir" ]]; then
-      if [[ "$dir" != "." && "$dir" != ".." ]]; then
-        echo "$dir"
-        return 0
-      fi
-    fi
-  done
-  return 1
-}
+INSTALL_DIR="${HOME}/.local/bin"
+mkdir -p "$INSTALL_DIR"
 
-INSTALL_DIR=$(find_writable_path || true)
-if [[ -z "$INSTALL_DIR" ]]; then
-  echo "ERROR: No writable directory found in PATH: $PATH" >&2
-  exit 1
+# Check if INSTALL_DIR is present in PATH
+in_path=false
+IFS=':' read -r -a path_array <<< "$PATH"
+for dir in "${path_array[@]}"; do
+  if [[ "$dir" == "$INSTALL_DIR" || "$dir" == "${HOME}/.local/bin" ]]; then
+    in_path=true
+    break
+  fi
+done
+
+if [[ "$in_path" == "false" ]]; then
+  export PATH="$INSTALL_DIR:$PATH"
+  if [[ -n "${GITHUB_PATH:-}" ]]; then
+    echo "$INSTALL_DIR" >> "$GITHUB_PATH"
+    echo "Added $INSTALL_DIR to GITHUB_PATH" >&2
+  fi
 fi
-echo "Installing tenv to $INSTALL_DIR..."
 
 echo "Extracting ${TAR_FILENAME}..."
 if [[ "$EXT" == "zip" ]]; then
@@ -188,6 +188,7 @@ else
 fi
 
 # Copy executables
+echo "Copying tenv to $INSTALL_DIR..."
 for file in "$TMP_DIR"/*; do
   if [[ -f "$file" && -x "$file" ]]; then
     cp -f "$file" "$INSTALL_DIR/"
