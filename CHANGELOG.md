@@ -1,3 +1,10 @@
+## [4.4.3](https://github.com/datadrivers/terragrunt-action/compare/v4.4.2...v4.4.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* **actions/checkout:** Update actions/checkout digest to 3d3c42e ([3d20f1b](https://github.com/datadrivers/terragrunt-action/commit/3d20f1bc6704cf9ea163cea3a2e5375dfbad0fe4))
+
 ## [4.4.2](https://github.com/datadrivers/terragrunt-action/compare/v4.4.1...v4.4.2) (2026-07-08)
 
 
