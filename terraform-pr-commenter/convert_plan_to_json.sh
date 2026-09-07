@@ -24,6 +24,11 @@ tf_convert_plan_to_json(){
     terraform_bin="terragrunt"
   fi
   "$terraform_bin" show -no-color -json "${planfile_name}" > "${tfplan_json}"
+  if ! jq empty "${tfplan_json}" >/dev/null 2>&1; then
+    echo "::error file=${tfplan_json}::Generated Terraform plan JSON is invalid; showing the first 40 lines" >&2
+    sed -n '1,40p' "${tfplan_json}" >&2
+    return 1
+  fi
   popd >/dev/null
   echo "${tfplan_json}" >&3
 }
@@ -35,8 +40,14 @@ export INPUT_USE_AUTOMATIC_BINARY_DETECTION
 tmp_output=$(mktemp)
 trap "rm -f $tmp_output" EXIT
 
+set +e
 find . -type f -name "${INPUT_TERRAFORM_PLAN_FILENAME}" -print0 | \
   xargs -0 -P "$(nproc)" -I {} bash -c 'tf_convert_plan_to_json "$@" >> '"$tmp_output" _ {}
+conversion_exit_code=$?
+set -e
+if [[ "${conversion_exit_code}" -ne 0 ]]; then
+  exit "${conversion_exit_code}"
+fi
 
 # Collect results from parallel execution
 if [[ -s "$tmp_output" ]]; then

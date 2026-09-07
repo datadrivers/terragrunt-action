@@ -43,9 +43,46 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
           enable-debug: true
+  test-terraform-pr-comment-broken-json:
+    name: Terraform PR commenter reports broken JSON
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run broken JSON fixture
+        working-directory: examples/test-pr-comment-broken-json
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/fake-terraform"
+          cat > "$RUNNER_TEMP/fake-terraform/terraform" <<'EOF'
+          #!/usr/bin/env bash
+          if [[ "$1" == "show" && "$2" == "-no-color" && "$3" == "-json" ]]; then
+            printf '{"planned_values":\n'
+            exit 0
+          fi
+          echo "unexpected terraform arguments: $*" >&2
+          exit 1
+          EOF
+          chmod +x "$RUNNER_TEMP/fake-terraform/terraform"
+
+          set +e
+          output=$(PATH="$RUNNER_TEMP/fake-terraform:$PATH" \
+            INPUT_TERRAFORM_PLAN_FILENAME=terraform.tfplan \
+            INPUT_USE_AUTOMATIC_BINARY_DETECTION=false \
+            GITHUB_OUTPUT="$RUNNER_TEMP/github-output" \
+            bash "$GITHUB_WORKSPACE/terraform-pr-commenter/convert_plan_to_json.sh" 2>&1)
+          exit_code=$?
+          set -e
+
+          printf '%s\n' "$output"
+          test "$exit_code" -ne 0
+          grep -Fq "Generated Terraform plan JSON is invalid" <<< "$output"
+          grep -Fq '{"planned_values":' <<< "$output"
   test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-24.04
@@ -75,6 +112,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-terragrunt
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt"
           pr-commenter-comment-footer: "Expecting 2 plans of 1 created resource each"
           enable-debug: true
@@ -108,6 +146,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-terragrunt-no-plan
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-no-plan"
           pr-commenter-comment-footer: "No plan was generated for this PR"
           enable-debug: true
@@ -139,6 +178,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-terragrunt-no-change
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-no-change"
           pr-commenter-comment-footer: "Expecting no changes in the PR comment"
           enable-debug: true
@@ -171,6 +211,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-terragrunt-with-no-summary
           pr-commenter-comment-header: "Terragrunt Plan Changes for test-pr-comment-terragrunt-with-no-summary"
           pr-commenter-comment-footer: "Expecting no summary in the PR comment, but 2 plans of 1 created resource each"
           include-plan-job-summary: false
@@ -202,6 +243,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-comment-with-binary-detection-override
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-comment-with-binary-detection-override"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
           use-automatic-binary-detection: false
@@ -233,6 +275,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-detect-versionfile
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
           enable-debug: true
@@ -264,6 +307,7 @@ jobs:
         uses: ./terraform-pr-commenter
         with:
           terraform-plan-filename: terraform.tfplan
+          working-directory: examples/test-pr-detect-versionfile-terragrunt
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile-terragrunt"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
           enable-debug: true
