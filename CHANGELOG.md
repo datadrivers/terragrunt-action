@@ -1,3 +1,10 @@
+## [4.4.5](https://github.com/datadrivers/terragrunt-action/compare/v4.4.4...v4.4.5) (2026-09-07)
+
+
+### Bug Fixes
+
+* **terraform-pr-commenter:** validate json before passing it ([67653fc](https://github.com/datadrivers/terragrunt-action/commit/67653fc00a2d7f2b84c79b8cf93c3361ba40355a))
+
 ## [4.4.4](https://github.com/datadrivers/terragrunt-action/compare/v4.4.3...v4.4.4) (2026-09-07)
 
 
