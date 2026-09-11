@@ -1,13 +1,24 @@
-# GitHub Action to run Terraform and Terragrunt
+# Terraform and Terragrunt GitHub Action
+
+Set up Terraform or Terragrunt with version management, caching, and optional AWS or Google Cloud authentication. The action can also run configured Terraform or Terragrunt commands.
+
+## Features
+
+- Installs Terraform, OpenTofu, and Terragrunt via [tenv](https://github.com/tofuutils/tenv)
+- Detects tool versions from `.terraform-version`, `.terragrunt-version`, and `.tool-versions`
+- Caches installed tools, Terraform providers, and Terragrunt downloads
+- Supports AWS OIDC and Google Cloud Workload Identity authentication
+- Optionally runs Terraform or Terragrunt commands through the `commands` input
+- Provides a companion action for publishing Terraform plans as pull request comments
 
 > Note: As of October 2025, this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). No changes to the input interface are required; specify `terraform-version` / `terragrunt-version` as before.
 > Set the TENV_GITHUB_TOKEN environment variable to ${{ github.token }} for tenv API calls to GitHub (e.g. to avoid rate limits).
 
-## Examples
+## Usage examples
 
-### Run Terraform (without Terragrunt)
+### Set up Terraform without running a command
 
-Common minimal workflow example. Leave `terraform-version` blank to let tenv auto-detect from `.terraform-version` or `.tool-versions`.
+Leave `terraform-version` blank to let tenv auto-detect the version from `.terraform-version` or `.tool-versions`. Terraform can then be used in a following workflow step.
 
 ```yaml
 name: Terraform Plan (no terragrunt)
@@ -36,7 +47,7 @@ jobs:
         with:
           terraform-version: ""
           use-aws-auth: "true"
-          aws-region: ${{ var.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
           aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       - name: run terraform
         working-directory: "terraform/"
@@ -44,7 +55,7 @@ jobs:
             terraform plan
 ```
 
-### Complete workflow with custom scripts to run Terraform plan via Terragrunt
+### Set up and run Terragrunt commands
 
 ```yaml
 name: Terraform Validate dev
