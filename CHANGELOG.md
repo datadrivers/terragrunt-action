@@ -1,3 +1,10 @@
+## [4.4.6](https://github.com/datadrivers/terragrunt-action/compare/v4.4.5...v4.4.6) (2026-09-11)
+
+
+### Bug Fixes
+
+* **aws-actions/configure-aws-credentials:** Update aws-actions/configure-aws-credentials digest to cbe3b39 ([af9861e](https://github.com/datadrivers/terragrunt-action/commit/af9861e489668caf16f60c3ed299bc75c9d76773))
+
 ## [4.4.5](https://github.com/datadrivers/terragrunt-action/compare/v4.4.4...v4.4.5) (2026-09-07)
 
 
