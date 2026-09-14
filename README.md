@@ -5,13 +5,14 @@ Set up Terraform or Terragrunt with version management, caching, and optional AW
 ## Features
 
 - Installs Terraform, OpenTofu, and Terragrunt via [tenv](https://github.com/tofuutils/tenv)
-- Detects tool versions from `.terraform-version`, `.terragrunt-version`, and `.tool-versions`
+- Detects tool versions from `.terraform-version`, `.opentofu-version`, `.terragrunt-version`, and `.tool-versions`
 - Caches installed tools, Terraform providers, and Terragrunt downloads
 - Supports AWS OIDC and Google Cloud Workload Identity authentication
 - Optionally runs Terraform or Terragrunt commands through the `commands` input
 - Provides a companion action for publishing Terraform plans as pull request comments
+- Configures Terragrunt to use Terraform by default, while honoring an explicit `TG_TF_PATH=tofu` or `tofu-version` input
 
-> Note: As of October 2025, this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). No changes to the input interface are required; specify `terraform-version` / `terragrunt-version` as before.
+> Note: As of October 2025, this composite action uses [tofuutils/tenv](https://github.com/tofuutils/tenv) under the hood to install Terraform, OpenTofu, and Terragrunt binaries (replacing the previous `hashicorp/setup-terraform` and `autero1/action-terragrunt` actions). Specify `terraform-version`, `tofu-version`, and `terragrunt-version` as needed.
 > Set the TENV_GITHUB_TOKEN environment variable to ${{ github.token }} for tenv API calls to GitHub (e.g. to avoid rate limits).
 
 ## Usage examples
@@ -53,6 +54,15 @@ jobs:
         working-directory: "terraform/"
         run: |
             terraform plan
+```
+
+To use OpenTofu instead, set `tofu-version`:
+
+```yaml
+- uses: datadrivers/terragrunt-action@v4
+  with:
+    tofu-version: ""
+    terragrunt-version: ""
 ```
 
 ### Set up and run Terragrunt commands
