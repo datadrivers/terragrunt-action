@@ -1,3 +1,11 @@
+# [4.5.0](https://github.com/datadrivers/terragrunt-action/compare/v4.4.6...v4.5.0) (2026-09-14)
+
+
+### Features
+
+* **terraform-pr-commenter:** support Terraform and OpenTofu plan conversion ([cb078c9](https://github.com/datadrivers/terragrunt-action/commit/cb078c955c285336084d6962ac5046e16b98078f))
+* **tofu:** add tofu version support ([c106db3](https://github.com/datadrivers/terragrunt-action/commit/c106db33bb595afdbad456316f3bd5b60735801c))
+
 ## [4.4.6](https://github.com/datadrivers/terragrunt-action/compare/v4.4.5...v4.4.6) (2026-09-11)
 
 
