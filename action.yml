@@ -12,6 +12,10 @@ inputs:
     description: "terraform version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .terraform-version / .tool-versions)."
     required: false
     default: ""
+  tofu-version:
+    description: "OpenTofu version to setup. Use 'disabled' to skip. Leave empty string to let tenv auto-detect (from .opentofu-version / .tool-versions)."
+    required: false
+    default: "disabled"
   tenv-version:
     description: "tenv version to setup."
     required: false
@@ -114,7 +118,7 @@ runs:
     - name: Resolve tenv version
       id: resolve-tenv-version
       shell: bash
-      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      if: inputs.terraform-version != 'disabled' || inputs.tofu-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       env:
         INPUT_TENV_VERSION: ${{ inputs.tenv-version }}
       run: |
@@ -124,20 +128,20 @@ runs:
         echo "Resolved tenv version: $RESOLVED_VERSION"
         echo "TENV_INSTALLER_CACHE_DIR=$HOME/.cache/tenv-installer" >> "$GITHUB_ENV"
     - name: Cache tenv installer
-      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true' && (inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled')
+      if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true' && (inputs.terraform-version != 'disabled' || inputs.tofu-version != 'disabled' || inputs.terragrunt-version != 'disabled')
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ env.TENV_INSTALLER_CACHE_DIR }}
         key: ${{ runner.os }}-${{ runner.arch }}-tenv-installer-${{ steps.resolve-tenv-version.outputs.resolved_version }}
     - name: Install tenv
-      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      if: inputs.terraform-version != 'disabled' || inputs.tofu-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
       env:
         INPUT_TENV_VERSION: ${{ env.TENV_VERSION }}
       run: |
         bash "${{ github.action_path }}/scripts/install-tenv.sh"
     - name: Set tenv root path
-      if: inputs.terraform-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      if: inputs.terraform-version != 'disabled' || inputs.tofu-version != 'disabled' || inputs.terragrunt-version != 'disabled'
       shell: bash
       run: |
         # Determine tenv root (allow override via TENV_ROOT env, else default)
@@ -145,30 +149,41 @@ runs:
         echo "TENV_ROOT_DIR=$TENV_ROOT_DIR" >> "$GITHUB_ENV"
     - name: Detect terraform/terragrunt versions (tenv)
       shell: bash
+      env:
+        INPUT_TERRAFORM_VERSION: ${{ inputs.terraform-version }}
+        INPUT_TOFU_VERSION: ${{ inputs.tofu-version }}
+        INPUT_TERRAGRUNT_VERSION: ${{ inputs.terragrunt-version }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
       run: |
-        tf_input="${{ inputs.terraform-version }}"
-        tg_input="${{ inputs.terragrunt-version }}"
-        workdir="${{ inputs.working-directory }}"
-        tf_ver="$tf_input"
-        tg_ver="$tg_input"
+        tf_ver="$INPUT_TERRAFORM_VERSION"
+        tofu_ver="$INPUT_TOFU_VERSION"
+        tg_ver="$INPUT_TERRAGRUNT_VERSION"
         parse_version(){ # $1=tool name
           awk -v tool="$1" 'tolower($1)==tolower(tool) && $2 ~ /^[0-9v]/ {gsub(/^v/,"",$2); print $2; exit}'
         }
         detect_tool(){ # $1=tool alias (tf/tg), $2=tool name for parse
           local alias="$1" name="$2" out
-          out=$(pushd $workdir; tenv "$alias" detect 2>&1 || true)
+          out=$(pushd "$INPUT_WORKING_DIRECTORY"; tenv "$alias" detect 2>&1 || true)
           printf '%s\n' "$out" | parse_version "$name"
         }
         # Terraform auto-detect
-        if [[ "$tf_input" != "disabled" && -z "$tf_input" ]]; then
+        if [[ "$INPUT_TERRAFORM_VERSION" != "disabled" && -z "$INPUT_TERRAFORM_VERSION" ]]; then
           detected_tf=$(detect_tool tf Terraform) || true
           if [[ -n "$detected_tf" ]]; then
             tf_ver="$detected_tf"
             echo "Detected terraform version: $tf_ver"
           fi
         fi
+        # OpenTofu auto-detect
+        if [[ "$INPUT_TOFU_VERSION" != "disabled" && -z "$INPUT_TOFU_VERSION" ]]; then
+          detected_tofu=$(detect_tool opentofu OpenTofu) || true
+          if [[ -n "$detected_tofu" ]]; then
+            tofu_ver="$detected_tofu"
+            echo "Detected OpenTofu version: $tofu_ver"
+          fi
+        fi
         # Terragrunt auto-detect
-        if [[ "$tg_input" != "disabled" && -z "$tg_input" ]]; then
+        if [[ "$INPUT_TERRAGRUNT_VERSION" != "disabled" && -z "$INPUT_TERRAGRUNT_VERSION" ]]; then
           detected_tg=$(detect_tool tg Terragrunt) || true
           if [[ -n "$detected_tg" ]]; then
             tg_ver="$detected_tg"
@@ -177,14 +192,33 @@ runs:
         fi
         # Export final values (could be explicit, detected, blank or 'disabled')
         echo "tf_ver=$tf_ver" >> "$GITHUB_ENV"
+        echo "tofu_ver=$tofu_ver" >> "$GITHUB_ENV"
         echo "tg_ver=$tg_ver" >> "$GITHUB_ENV"
+    - name: Configure Terragrunt Terraform binary
+      if: inputs.terraform-version != 'disabled' || inputs.tofu-version != 'disabled' || inputs.terragrunt-version != 'disabled'
+      shell: bash
+      env:
+        INPUT_TOFU_VERSION: ${{ inputs.tofu-version }}
+      run: |
+        tf_path="${TG_TF_PATH:-}"
+        if [[ -z "$tf_path" ]]; then
+          if [[ "${tofu_ver}" != "disabled" && ( -n "${INPUT_TOFU_VERSION}" || "${tf_ver}" == "disabled" || -n "${tofu_ver}" && -z "${tf_ver}" ) ]]; then
+            tf_path="tofu"
+          else
+            tf_path="terraform"
+          fi
+        fi
+        echo "TG_TF_PATH=$tf_path" >> "$GITHUB_ENV"
+        echo "Configured Terragrunt Terraform binary: $tf_path"
     - name: Compute terraform plugin cache scope (by lockfile hash)
       id: plugin-scope
       if: inputs.skip-caches == 'false'
       shell: bash
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
       run: |
         # Scope hashFiles to working-directory to ensure each stack has independent cache
-        workdir="${{ inputs.working-directory }}"
+        workdir="${INPUT_WORKING_DIRECTORY}"
         # Normalize path (remove trailing slash, handle '.')
         workdir="${workdir%/}"
 
@@ -202,26 +236,37 @@ runs:
     - name: Build tenv cache paths
       if: inputs.skip-caches == 'false' && inputs.cache-tenv-tools == 'true'
       shell: bash
+      env:
+        TF_VERSION: ${{ env.tf_ver }}
+        TOFU_VERSION: ${{ env.tofu_ver }}
+        TERRAGRUNT_VERSION: ${{ env.tg_ver }}
+        TENV_ROOT: ${{ env.TENV_ROOT_DIR }}
       run: |
         paths=()
         # Terraform path logic
-        if [[ "${{ env.tf_ver }}" != "disabled" ]]; then
-          if [[ "${{ env.tf_ver }}" == "latest" || -z "${{ env.tf_ver }}" ]]; then
-            paths+=("${{ env.TENV_ROOT_DIR }}/Terraform/")
+        if [[ "${TF_VERSION}" != "disabled" ]]; then
+          if [[ "${TF_VERSION}" == "latest" || -z "${TF_VERSION}" ]]; then
+            paths+=("${TENV_ROOT}/Terraform/")
           else
-            paths+=("${{ env.TENV_ROOT_DIR }}/Terraform/${{ env.tf_ver }}")
+            paths+=("${TENV_ROOT}/Terraform/${TF_VERSION}")
           fi
         fi
         # Terragrunt path logic
-        if [[ "${{ env.tg_ver }}" != "disabled" ]]; then
-          if [[ "${{ env.tg_ver }}" == "latest" || -z "${{ env.tg_ver }}" ]]; then
-            paths+=("${{ env.TENV_ROOT_DIR }}/Terragrunt/")
+        if [[ "${TERRAGRUNT_VERSION}" != "disabled" ]]; then
+          if [[ "${TERRAGRUNT_VERSION}" == "latest" || -z "${TERRAGRUNT_VERSION}" ]]; then
+            paths+=("${TENV_ROOT}/Terragrunt/")
           else
-            paths+=("${{ env.TENV_ROOT_DIR }}/Terragrunt/${{ env.tg_ver }}")
+            paths+=("${TENV_ROOT}/Terragrunt/${TERRAGRUNT_VERSION}")
           fi
         fi
         # OpenTofu (always included for now)
-        paths+=("${{ env.TENV_ROOT_DIR }}/OpenTofu/")
+        if [[ "${TOFU_VERSION}" != "disabled" ]]; then
+          if [[ "${TOFU_VERSION}" == "latest" || -z "${TOFU_VERSION}" ]]; then
+            paths+=("${TENV_ROOT}/OpenTofu/")
+          else
+            paths+=("${TENV_ROOT}/OpenTofu/${TOFU_VERSION}")
+          fi
+        fi
         # Join paths with newline and export
         cache_paths=$(printf '%s\n' "${paths[@]}")
         echo "TENV_CACHE_PATHS<<EOF" >> "$GITHUB_ENV"
@@ -232,9 +277,9 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: ${{ env.TENV_CACHE_PATHS }}
-        key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
+        key: ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tofu_ver }}-${{ env.tg_ver }}-${{ hashFiles('**/.terraform-version','**/.terragrunt-version','**/.opentofu-version') }}
         restore-keys: |
-          ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tg_ver }}
+          ${{ runner.os }}-tenv-${{ env.tf_ver }}-${{ env.tofu_ver }}-${{ env.tg_ver }}
     - name: Installs terraform
       if: inputs.terraform-version != 'disabled'
       shell: bash
@@ -261,6 +306,19 @@ runs:
             tenv tg install
           else
             tenv tg install "${tg_ver}"
+          fi
+        fi
+    - name: Install OpenTofu
+      if: inputs.tofu-version != 'disabled'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [[ "${tofu_ver}" != "disabled" ]]; then
+          if [[ -z "${tofu_ver}" ]]; then
+            export TENV_AUTO_INSTALL=true
+            tenv opentofu install
+          else
+            tenv opentofu install "${tofu_ver}"
           fi
         fi
     - name: Configure caches
