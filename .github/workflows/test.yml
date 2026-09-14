@@ -204,8 +204,8 @@ jobs:
           enable-debug: true # for prod use false here
       - working-directory: examples/test-pr-comment-terragrunt-with-no-summary
         run: |
-          terragrunt run --all -- init
-          terragrunt run --all -- plan -out terraform.tfplan # required to generate pr comments
+          terragrunt run --all --provider-cache -- init
+          terragrunt run --all --provider-cache -- plan -out terraform.tfplan # required to generate pr comments
       - name: Add PR comment
         if: github.event_name == 'pull_request'
         uses: ./terraform-pr-commenter
