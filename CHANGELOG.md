@@ -1,3 +1,10 @@
+## [4.5.1](https://github.com/datadrivers/terragrunt-action/compare/v4.5.0...v4.5.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **aws:** correct deprecation ([0828db9](https://github.com/datadrivers/terragrunt-action/commit/0828db974bd9cc3248f83f0b6e9e81bce093308d))
+
 # [4.5.0](https://github.com/datadrivers/terragrunt-action/compare/v4.4.6...v4.5.0) (2026-09-14)
 
 
