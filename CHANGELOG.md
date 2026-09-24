@@ -1,3 +1,15 @@
+# [4.6.0](https://github.com/datadrivers/terragrunt-action/compare/v4.5.1...v4.6.0) (2026-09-24)
+
+
+### Bug Fixes
+
+* **aws-actions/configure-aws-credentials:** Update aws-actions/configure-aws-credentials digest to e125382 ([434e710](https://github.com/datadrivers/terragrunt-action/commit/434e710634e7a44d9c0678fa520913faedaa0c31))
+
+
+### Features
+
+* **terraform-pr-commenter:** expose aggregated plan change counts ([811f088](https://github.com/datadrivers/terragrunt-action/commit/811f088a8ad6ba522b85392fa6f92a893885267d))
+
 ## [4.5.1](https://github.com/datadrivers/terragrunt-action/compare/v4.5.0...v4.5.1) (2026-09-18)
 
 
