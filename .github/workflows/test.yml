@@ -83,6 +83,47 @@ jobs:
           test "$exit_code" -ne 0
           grep -Fq "Generated Terraform plan JSON is invalid" <<< "$output"
           grep -Fq '{"planned_values":' <<< "$output"
+  test-pr-comment-plan-counts:
+    name: Terraform PR commenter exposes aggregated plan counts
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Test aggregated plan counts
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/fake-terraform" "$RUNNER_TEMP/plan-counts/first" "$RUNNER_TEMP/plan-counts/second"
+          cat > "$RUNNER_TEMP/fake-terraform/terraform" <<'EOF'
+          #!/usr/bin/env bash
+          if [[ "$1" != "show" || "$2" != "-no-color" || "$3" != "-json" ]]; then
+            echo "unexpected terraform arguments: $*" >&2
+            exit 1
+          fi
+          if [[ "$PWD" == */first ]]; then
+            printf '%s\n' '{"resource_changes":[{"change":{"actions":["create"]}},{"change":{"actions":["update"]}},{"change":{"actions":["delete"]}},{"change":{"actions":["delete","create"]}},{"change":{"actions":["create","delete"]}},{"change":{"actions":["read"]}},{"change":{"actions":["no-op"]}}]}'
+          else
+            printf '%s\n' '{"resource_changes":[{"change":{"actions":["create"]}},{"change":{"actions":["read"]}}]}'
+          fi
+          EOF
+          chmod +x "$RUNNER_TEMP/fake-terraform/terraform"
+          touch "$RUNNER_TEMP/plan-counts/first/terraform.tfplan" "$RUNNER_TEMP/plan-counts/second/terraform.tfplan"
+          output_file="$RUNNER_TEMP/github-output"
+          cd "$RUNNER_TEMP/plan-counts"
+          PATH="$RUNNER_TEMP/fake-terraform:$PATH" \
+            INPUT_TERRAFORM_PLAN_FILENAME=terraform.tfplan \
+            INPUT_USE_AUTOMATIC_BINARY_DETECTION=false \
+            GITHUB_OUTPUT="$output_file" \
+            bash "$GITHUB_WORKSPACE/terraform-pr-commenter/convert_plan_to_json.sh"
+
+          summary="$(awk '/^plan_changes_summary<</ { getline; print; exit }' "$output_file")"
+          jq -e '. == {"create":2,"update":1,"delete":1,"replace":2,"read":2,"total":6}' <<< "$summary" >/dev/null
+          grep -Fxq 'plan_changes_create=2' "$output_file"
+          grep -Fxq 'plan_changes_update=1' "$output_file"
+          grep -Fxq 'plan_changes_delete=1' "$output_file"
+          grep -Fxq 'plan_changes_replace=2' "$output_file"
+          grep -Fxq 'plan_changes_read=2' "$output_file"
+          grep -Fxq 'plan_changes_total=6' "$output_file"
   test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
     runs-on: ubuntu-24.04

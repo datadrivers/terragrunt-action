@@ -85,3 +85,24 @@ outputs:
   terraform_planfiles_json:
     description: "Newline-separated list of generated tfplan json files"
     value: ${{ steps.tf-planfiles.outputs.terraform_planfiles_json }}
+  plan_changes_summary:
+    description: "JSON summary of planned resource changes across all plan files"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_summary }}
+  plan_changes_create:
+    description: "Number of resources to create"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_create }}
+  plan_changes_update:
+    description: "Number of resources to update"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_update }}
+  plan_changes_delete:
+    description: "Number of resources to delete"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_delete }}
+  plan_changes_replace:
+    description: "Number of resources to replace"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_replace }}
+  plan_changes_read:
+    description: "Number of data sources to read"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_read }}
+  plan_changes_total:
+    description: "Total planned changes, excluding data-source reads and no-op resources"
+    value: ${{ steps.tf-planfiles.outputs.plan_changes_total }}
