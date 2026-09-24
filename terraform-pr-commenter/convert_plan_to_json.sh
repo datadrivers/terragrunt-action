@@ -107,4 +107,38 @@ if [[ -n "${content// /}" ]]; then
   delimiter="$(openssl rand -hex 8)"
   printf 'terraform_planfiles_json<<%s\n%s\n%s\n' "$delimiter" "$content" "$delimiter" >> "$GITHUB_OUTPUT"
 fi
+
+if ((${#planfiles_json[@]})); then
+  plan_changes_summary="$(
+    jq -c -s '
+      reduce .[] as $plan (
+        {create: 0, update: 0, delete: 0, replace: 0, read: 0};
+        reduce ($plan.resource_changes // [])[] as $resource (.;
+          ($resource.change.actions // []) as $actions
+          | if $actions == ["create"] then .create += 1
+            elif $actions == ["update"] then .update += 1
+            elif $actions == ["delete"] then .delete += 1
+            elif $actions == ["delete", "create"] or $actions == ["create", "delete"] then .replace += 1
+            elif $actions == ["read"] then .read += 1
+            elif $actions == ["no-op"] then .
+            else error("Unsupported planned action sequence: \(($actions | tojson))")
+            end
+        )
+      )
+      | .total = .create + .update + .delete + .replace
+    ' "${planfiles_json[@]}"
+  )"
+else
+  plan_changes_summary='{"create":0,"update":0,"delete":0,"replace":0,"read":0,"total":0}'
+fi
+
+delimiter="$(openssl rand -hex 8)"
+printf 'plan_changes_summary<<%s\n%s\n%s\n' "$delimiter" "$plan_changes_summary" "$delimiter" >> "$GITHUB_OUTPUT"
+for change_type in create update delete replace read total; do
+  change_count="$(jq -r --arg change_type "$change_type" '.[$change_type]' <<< "$plan_changes_summary")"
+  printf 'plan_changes_%s=%s\n' "$change_type" "$change_count" >> "$GITHUB_OUTPUT"
+done
+
+jq -r '"Plan change counts: create=\(.create), update=\(.update), delete=\(.delete), replace=\(.replace), read=\(.read), total=\(.total)"' <<< "$plan_changes_summary"
+
 echo "::endgroup::"
