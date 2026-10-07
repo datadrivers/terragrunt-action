@@ -7,6 +7,8 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
+from typing import Optional, Protocol, Tuple
 
 
 MAX_COMMENT_LENGTH = 65536
@@ -41,8 +43,78 @@ class CommenterError(Exception):
     pass
 
 
-def input_bool(name, default):
-    value = os.environ.get(name)
+@dataclass(frozen=True)
+class ResourceChanges:
+    create: Tuple[str, ...] = ()
+    delete: Tuple[str, ...] = ()
+    update: Tuple[str, ...] = ()
+    replace: Tuple[str, ...] = ()
+    unchanged: Tuple[str, ...] = ()
+
+    @property
+    def has_resources(self):
+        return any(
+            (
+                self.create,
+                self.delete,
+                self.update,
+                self.replace,
+                self.unchanged,
+            )
+        )
+
+    def changed_resources(self):
+        return {
+            name: resources
+            for name, resources in (
+                ("create", self.create),
+                ("delete", self.delete),
+                ("update", self.update),
+                ("replace", self.replace),
+            )
+            if resources
+        }
+
+
+@dataclass(frozen=True)
+class CommenterOptions:
+    json_paths: Tuple[str, ...]
+    header: str
+    footer: str
+    include_plan_job_summary: bool
+    log_changed_resources: bool
+    replace_existing_comments: bool
+    hide_previous_comments: bool
+    repository: str
+    pull_request: Optional[int]
+    workflow_link: str
+    step_summary_path: Optional[str]
+
+
+@dataclass(frozen=True)
+class CommentPolicy:
+    marker: str
+    header: str
+    replace_existing: bool
+    hide_previous: bool
+
+
+class CommentApi(Protocol):
+    def list_issue_comments(self, repository, pull_request):
+        ...
+
+    def create_comment(self, repository, pull_request, body):
+        ...
+
+    def update_comment(self, repository, comment_id, body):
+        ...
+
+    def minimize_comments(self, repository, pull_request, comments):
+        ...
+
+
+def input_bool(name, default, environ):
+    value = environ.get(name)
     if value is None or value == "":
         return default
     normalized = value.lower()
@@ -54,13 +126,7 @@ def input_bool(name, default):
 
 
 def classify_resources(plan):
-    groups = {
-        "create": [],
-        "delete": [],
-        "update": [],
-        "replace": [],
-        "unchanged": [],
-    }
+    groups = {name: [] for name in ("create", "delete", "update", "replace", "unchanged")}
     resource_changes = plan.get("resource_changes") or []
     if not isinstance(resource_changes, list):
         raise CommenterError("Plan JSON field 'resource_changes' must be an array")
@@ -79,7 +145,9 @@ def classify_resources(plan):
             groups["update"].append(address)
         elif actions == ["no-op"]:
             groups["unchanged"].append(address)
-    return groups
+    return ResourceChanges(
+        **{name: tuple(resources) for name, resources in groups.items()}
+    )
 
 
 def resource_details(title, resources, operator, replacement=False):
@@ -95,11 +163,11 @@ def resource_details(title, resources, operator, replacement=False):
 
 
 def render_plan(path, groups, header, footer, workflow_link, include_details=True):
-    create = len(groups["create"])
-    delete = len(groups["delete"])
-    update = len(groups["update"])
-    replace = len(groups["replace"])
-    unchanged = len(groups["unchanged"])
+    create = len(groups.create)
+    delete = len(groups.delete)
+    update = len(groups.update)
+    replace = len(groups.replace)
+    unchanged = len(groups.unchanged)
     summary = (
         f"<b>Terraform Plan: {create} to be created, {delete} to be deleted, "
         f"{update} to be updated, {replace} to be replaced, "
@@ -107,16 +175,15 @@ def render_plan(path, groups, header, footer, workflow_link, include_details=Tru
     )
     parts = [f"{header} for `{path}`", "<details>", "<summary>", summary, "</summary>", ""]
 
-    if not any(groups.values()):
+    if not groups.has_resources:
         parts.extend(["<p>There were no changes done to the infrastructure.</p>", ""])
     elif include_details:
         parts.extend(
             [
-                resource_details("Resources to create", groups["create"], "+"),
-                resource_details("Resources to delete", groups["delete"], "-"),
-                resource_details("Resources to update", groups["update"], "!"),
-                resource_details("Resources to replace", groups["replace"], "+", replacement=True),
-                resource_details("Unchanged resources", groups["unchanged"], "•"),
+                resource_details("Resources to create", groups.create, "+"),
+                resource_details("Resources to delete", groups.delete, "-"),
+                resource_details("Resources to update", groups.update, "!"),
+                resource_details("Resources to replace", groups.replace, "+", replacement=True),
             ]
         )
     parts.extend(["</details>", ""])
@@ -188,6 +255,14 @@ class GitHubApi:
         self.token = token
         self.api_url = (api_url or "https://api.github.com").rstrip("/")
         self.graphql_url = graphql_url or f"{self.api_url}/graphql"
+
+    @classmethod
+    def from_environment(cls, environ):
+        return cls(
+            environ.get("INPUT_GITHUB_TOKEN", ""),
+            api_url=environ.get("GITHUB_API_URL"),
+            graphql_url=environ.get("GITHUB_GRAPHQL_URL"),
+        )
 
     def request(self, url, method="GET", payload=None):
         data = None if payload is None else json.dumps(payload).encode("utf-8")
@@ -301,33 +376,24 @@ class GitHubApi:
             self.graphql(MINIMIZE_COMMENT_MUTATION, {"id": node_id})
 
 
-def publish_comment(
-    api,
-    repository,
-    pull_request,
-    body,
-    marker,
-    header,
-    replace_existing,
-    hide_previous,
-):
+def publish_comment(api, repository, pull_request, body, policy):
     comments = api.list_issue_comments(repository, pull_request)
     matching = [
         comment
         for comment in comments
-        if is_action_comment(comment, marker, header)
+        if is_action_comment(comment, policy.marker, policy.header)
     ]
 
-    if replace_existing and matching:
+    if policy.replace_existing and matching:
         target = select_latest_comment(matching)
         api.update_comment(repository, target["id"], body)
         print(f"Updated existing PR comment {target['id']}.")
-        if hide_previous:
+        if policy.hide_previous:
             older = [comment for comment in matching if comment["id"] != target["id"]]
             api.minimize_comments(repository, pull_request, older)
         return "updated"
 
-    if hide_previous:
+    if policy.hide_previous:
         api.minimize_comments(repository, pull_request, matching)
     api.create_comment(repository, pull_request, body)
     print("Created a PR comment.")
@@ -344,7 +410,62 @@ def pull_request_number(event_name, event):
     return number
 
 
-def load_plans(paths):
+def options_from_environment(environ=None):
+    environ = os.environ if environ is None else environ
+    paths = tuple(
+        path.strip()
+        for path in environ.get("INPUT_JSON_FILES", "").splitlines()
+        if path.strip()
+    )
+    if not paths:
+        raise CommenterError("No Terraform plan JSON files were provided")
+
+    event = {}
+    event_path = environ.get("GITHUB_EVENT_PATH")
+    if event_path:
+        try:
+            with open(event_path, encoding="utf-8") as event_file:
+                event = json.load(event_file)
+        except OSError as error:
+            raise CommenterError(f"Could not read GitHub event payload: {error}") from error
+        except json.JSONDecodeError as error:
+            raise CommenterError(f"Invalid GitHub event payload: {error}") from error
+
+    event_name = environ.get("GITHUB_EVENT_NAME", "")
+    if not isinstance(event, dict):
+        raise CommenterError("GitHub event payload must be a JSON object")
+    repository = environ.get("GITHUB_REPOSITORY", "")
+    workflow_link = ""
+    include_workflow_link = input_bool("INPUT_INCLUDE_WORKFLOW_LINK", True, environ)
+    if include_workflow_link:
+        server_url = environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
+        run_id = environ.get("GITHUB_RUN_ID", "")
+        workflow = environ.get("GITHUB_WORKFLOW", "")
+        if repository and run_id:
+            workflow_link = (
+                f"[Workflow: {workflow}]({server_url}/{repository}/actions/runs/{run_id})"
+            )
+
+    return CommenterOptions(
+        json_paths=paths,
+        header=environ.get("INPUT_COMMENT_HEADER", "Terraform Plan Changes"),
+        footer=environ.get("INPUT_COMMENT_FOOTER", ""),
+        include_plan_job_summary=input_bool(
+            "INPUT_INCLUDE_PLAN_JOB_SUMMARY", True, environ
+        ),
+        log_changed_resources=input_bool("INPUT_LOG_CHANGED_RESOURCES", True, environ),
+        replace_existing_comments=input_bool(
+            "INPUT_REPLACE_EXISTING_COMMENTS", False, environ
+        ),
+        hide_previous_comments=input_bool("INPUT_HIDE_PREVIOUS_COMMENTS", True, environ),
+        repository=repository,
+        pull_request=pull_request_number(event_name, event),
+        workflow_link=workflow_link,
+        step_summary_path=environ.get("GITHUB_STEP_SUMMARY"),
+    )
+
+
+def load_plans(paths, log_changed_resources):
     plans = []
     for path in paths:
         try:
@@ -357,19 +478,16 @@ def load_plans(paths):
         if not isinstance(plan, dict):
             raise CommenterError(f"Plan JSON in {path} must be an object")
         groups = classify_resources(plan)
-        if input_bool("INPUT_LOG_CHANGED_RESOURCES", True):
-            changed = {
-                name: resources
-                for name, resources in groups.items()
-                if name != "unchanged" and resources
-            }
-            print(f"Changed resources in {path}: {json.dumps(changed)}")
+        if log_changed_resources:
+            print(
+                f"Changed resources in {path}: "
+                f"{json.dumps(groups.changed_resources())}"
+            )
         plans.append((path, groups))
     return plans
 
 
-def append_job_summary(body):
-    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+def append_job_summary(body, summary_path):
     if not summary_path:
         return
     try:
@@ -379,73 +497,48 @@ def append_job_summary(body):
         raise CommenterError(f"Could not write the GitHub step summary: {error}") from error
 
 
-def run():
-    paths = [
-        path.strip()
-        for path in os.environ.get("INPUT_JSON_FILES", "").splitlines()
-        if path.strip()
-    ]
-    if not paths:
-        raise CommenterError("No Terraform plan JSON files were provided")
-
-    header = os.environ.get("INPUT_COMMENT_HEADER", "Terraform Plan Changes")
-    footer = os.environ.get("INPUT_COMMENT_FOOTER", "")
-    include_workflow_link = input_bool("INPUT_INCLUDE_WORKFLOW_LINK", True)
-    workflow_link = ""
-    if include_workflow_link:
-        repository = os.environ.get("GITHUB_REPOSITORY", "")
-        server_url = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
-        run_id = os.environ.get("GITHUB_RUN_ID", "")
-        workflow = os.environ.get("GITHUB_WORKFLOW", "")
-        if repository and run_id:
-            workflow_link = (
-                f"[Workflow: {workflow}]({server_url}/{repository}/actions/runs/{run_id})"
-            )
-
-    plans = load_plans(paths)
-    body = render_comment(plans, header, footer, workflow_link)
-    repository = os.environ.get("GITHUB_REPOSITORY", "")
-    marker = comment_marker(repository, header)
+def run_commenter(options, api):
+    plans = load_plans(options.json_paths, options.log_changed_resources)
+    body = render_comment(
+        plans,
+        options.header,
+        options.footer,
+        options.workflow_link,
+    )
+    marker = comment_marker(options.repository, options.header)
     body = f"{body.rstrip()}\n\n{marker}\n"
 
-    if input_bool("INPUT_INCLUDE_PLAN_JOB_SUMMARY", True):
-        append_job_summary(body)
+    if options.include_plan_job_summary:
+        append_job_summary(body, options.step_summary_path)
 
-    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
-    event_path = os.environ.get("GITHUB_EVENT_PATH")
-    if not event_path:
-        print("GITHUB_EVENT_PATH is not set; skipping PR comment.")
-        return
-    try:
-        with open(event_path, encoding="utf-8") as event_file:
-            event = json.load(event_file)
-    except OSError as error:
-        raise CommenterError(f"Could not read GitHub event payload: {error}") from error
-    except json.JSONDecodeError as error:
-        raise CommenterError(f"Invalid GitHub event payload: {error}") from error
-
-    pull_request = pull_request_number(event_name, event)
-    if not pull_request:
-        print(f"No pull request context for {event_name}; skipping PR comment.")
-        return
-    if not repository or "/" not in repository:
+    if options.pull_request is None:
+        print("No pull request context; skipping PR comment.")
+        return None
+    if not options.repository or "/" not in options.repository:
         raise CommenterError("GITHUB_REPOSITORY is missing or invalid")
+    if api is None:
+        raise CommenterError("A GitHub API adapter is required to post a PR comment")
 
-    api = GitHubApi(
-        os.environ.get("INPUT_GITHUB_TOKEN", ""),
-        api_url=os.environ.get("GITHUB_API_URL"),
-        graphql_url=os.environ.get("GITHUB_GRAPHQL_URL"),
-    )
-    publish_comment(
+    return publish_comment(
         api,
-        repository,
-        pull_request,
+        options.repository,
+        options.pull_request,
         body,
-        marker,
-        header,
-        input_bool("INPUT_REPLACE_EXISTING_COMMENTS", False),
-        input_bool("INPUT_HIDE_PREVIOUS_COMMENTS", True),
+        CommentPolicy(
+            marker=marker,
+            header=options.header,
+            replace_existing=options.replace_existing_comments,
+            hide_previous=options.hide_previous_comments,
+        ),
     )
+
+
+def run():
+    options = options_from_environment()
+    api = None
+    if options.pull_request is not None:
+        api = GitHubApi.from_environment(os.environ)
+    run_commenter(options, api)
 
 
 if __name__ == "__main__":
