@@ -16,6 +16,15 @@ env:
 permissions: {}
 
 jobs:
+  test-terraform-pr-commenter-python:
+    name: Terraform PR commenter Python tests
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run commenter unit tests
+        run: python3 -B -m unittest discover -s terraform-pr-commenter -p 'test_*.py'
   test-terraform-pr-comment:
     name: TF code in examples/test-pr-comment
     runs-on: ubuntu-24.04
@@ -319,6 +328,7 @@ jobs:
           working-directory: examples/test-pr-detect-versionfile
           pr-commenter-comment-header: "Terraform Plan Changes for test-pr-detect-versionfile"
           pr-commenter-comment-footer: "Expecting plan of 1 created resource"
+          replace-existing-comments: true # update this plan's existing PR comment
           enable-debug: true
   test-terraform-pr-comment-versionfile-terragrunt:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt

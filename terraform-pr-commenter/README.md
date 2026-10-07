@@ -1,6 +1,6 @@
 # Terraform Plan PR Commenter
 
-Converts Terraform or Terragrunt plan files to JSON and posts a pull request comment using [`liatrio/terraform-change-pr-commenter`](https://github.com/liatrio/terraform-change-pr-commenter).
+Converts Terraform or Terragrunt plan files to JSON and posts a pull request comment.
 
 ## Inputs
 
@@ -15,6 +15,7 @@ Converts Terraform or Terragrunt plan files to JSON and posts a pull request com
 | `pr-commenter-comment-footer` | Text to append to the PR comment | No | (empty) |
 | `continue-on-error` | Continue if posting the comment fails | No | `true` |
 | `hide-previous-comments` | Hide earlier comments from this action | No | `true` |
+| `replace-existing-comments` | Update a matching comment in place instead of creating a new one | No | `false` |
 | `log-changed-resources` | List changed resources in the PR comment | No | `true` |
 | `github-token` | Token used to post the PR comment | No | `${{ github.token }}` |
 | `working-directory` | Directory to search for plan files | No | `.` |
@@ -52,6 +53,7 @@ steps:
     uses: datadrivers/terragrunt-action/terraform-pr-commenter@v1
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
+      replace-existing-comments: true # update this plan's existing PR comment
 
   - name: Show plan counts
     env:
@@ -67,4 +69,7 @@ With `use-automatic-binary-detection` enabled, the action uses Terragrunt when a
 
 - A Terraform or Terragrunt plan file must exist in `working-directory`.
 - The runner must have Terraform, OpenTofu, or Terragrunt available as required by the plan.
+- The runner must have Python 3 available on `PATH`.
 - The workflow needs `contents: read` and `pull-requests: write` permissions to post a PR comment.
+
+When `replace-existing-comments` is enabled, comments are matched by the configured header and an internal marker. Existing comments from the previous commenter are also recognized when they were created by `github-actions[bot]`. Use a unique `pr-commenter-comment-header` for each independent plan or matrix job. When replacement is disabled, `hide-previous-comments` retains its existing behavior.
