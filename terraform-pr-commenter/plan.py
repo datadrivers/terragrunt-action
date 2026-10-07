@@ -111,15 +111,25 @@ def render_plan(
     return "\n".join(part for part in parts if part is not None)
 
 
+def _append_marker(body: str, marker: str) -> str:
+    if not marker:
+        return body
+    return f"{body.rstrip()}\n\n{marker}\n"
+
+
 def render_comment(
     plans: Sequence[PlanWithChanges],
     header: str,
     footer: str,
     workflow_link: str,
+    marker: str = "",
 ) -> str:
-    full = "\n".join(
-        render_plan(path, groups, header, footer, workflow_link)
-        for path, groups in plans
+    full = _append_marker(
+        "\n".join(
+            render_plan(path, groups, header, footer, workflow_link)
+            for path, groups in plans
+        ),
+        marker,
     )
     if len(full) <= MAX_COMMENT_LENGTH:
         return full
@@ -130,17 +140,19 @@ def render_comment(
         )
         for path, groups in plans
     )
+    compact = _append_marker(
+        compact
+        + "\n<p>Resource details were omitted because the full plan exceeded "
+        + f"GitHub's comment size limit ({MAX_COMMENT_LENGTH} characters). "
+        + "See the workflow run for the complete plan.</p>\n",
+        marker,
+    )
     if len(compact) > MAX_COMMENT_LENGTH:
         raise CommenterError(
             "The generated PR comment exceeds GitHub's comment size limit, "
             "even after omitting resource details"
         )
-    return (
-        compact
-        + "\n<p>Resource details were omitted because the full plan exceeded "
-        + f"GitHub's comment size limit ({MAX_COMMENT_LENGTH} characters). "
-        + "See the workflow run for the complete plan.</p>\n"
-    )
+    return compact
 
 
 def load_plans(

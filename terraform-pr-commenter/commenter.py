@@ -229,17 +229,17 @@ def run_commenter(
     plans: List[PlanWithChanges] = load_plans(
         options.json_paths, options.log_changed_resources
     )
+    plan_paths = tuple(path for path, _ in plans)
+    marker = comment_marker(
+        options.repository, options.header, plan_paths, options.workspace
+    )
     body = render_comment(
         plans,
         options.header,
         options.footer,
         options.workflow_link,
+        marker,
     )
-    plan_paths = tuple(path for path, _ in plans)
-    marker = comment_marker(
-        options.repository, options.header, plan_paths, options.workspace
-    )
-    body = f"{body.rstrip()}\n\n{marker}\n"
 
     if options.include_plan_job_summary:
         append_job_summary(body, options.step_summary_path)

@@ -1,1 +1,10 @@
 .infracost/
+
+# mac
+.Bridge*
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# python
+**/__pycache__/*

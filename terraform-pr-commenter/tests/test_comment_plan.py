@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from typing import List
+from unittest.mock import patch
 
 from commenter import (
     comment_marker,
@@ -14,7 +15,7 @@ from commenter import (
     options_from_environment,
     run_commenter,
 )
-from commenter_types import Comment, CommenterOptions, CommentPolicy
+from commenter_types import Comment, CommenterError, CommenterOptions, CommentPolicy
 from plan import (
     classify_resources,
     render_comment,
@@ -139,6 +140,58 @@ class CommentPlanTests(unittest.TestCase):
         self.assertIn("Review this plan", body)
         self.assertIn("[Workflow: Terraform]", body)
         self.assertNotIn("Unchanged resources", body)
+
+    def test_comment_limit_includes_marker(self) -> None:
+        groups = classify_resources(
+            {
+                "resource_changes": [
+                    {"address": "aws_instance.web", "change": {"actions": ["create"]}}
+                ]
+            }
+        )
+        plans = [("terraform.tfplan.json", groups)]
+        marker = "<!-- test-marker -->"
+        body_without_marker = render_comment(plans, self.header, "", "")
+        expected_body = f"{body_without_marker.rstrip()}\n\n{marker}\n"
+
+        with patch("plan.MAX_COMMENT_LENGTH", len(expected_body)):
+            body = render_comment(plans, self.header, "", "", marker)
+
+        self.assertEqual(body, expected_body)
+
+    def test_comment_limit_includes_marker_after_compacting(self) -> None:
+        resource_address = "aws_instance." + ("x" * 2000)
+        groups = classify_resources(
+            {
+                "resource_changes": [
+                    {"address": resource_address, "change": {"actions": ["create"]}}
+                ]
+            }
+        )
+        marker = "<!-- test-marker -->"
+
+        with patch("plan.MAX_COMMENT_LENGTH", 512):
+            body = render_comment(
+                [("terraform.tfplan.json", groups)],
+                self.header,
+                "",
+                "",
+                marker,
+            )
+
+        self.assertLessEqual(len(body), 512)
+        self.assertIn("Resource details were omitted", body)
+        self.assertTrue(body.endswith(f"{marker}\n"))
+
+        with patch("plan.MAX_COMMENT_LENGTH", 200):
+            with self.assertRaises(CommenterError):
+                render_comment(
+                    [("terraform.tfplan.json", groups)],
+                    self.header,
+                    "",
+                    "",
+                    marker,
+                )
 
     def test_matches_legacy_comments_by_header_and_plan_path(self) -> None:
         plan_path = "terraform.tfplan.json"
