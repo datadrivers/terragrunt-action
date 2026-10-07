@@ -1,3 +1,5 @@
+"""Unit tests for the Terraform PR commenter."""
+
 import json
 import os
 import tempfile
