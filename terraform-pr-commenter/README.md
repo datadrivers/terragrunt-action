@@ -69,7 +69,7 @@ With `use-automatic-binary-detection` enabled, the action uses Terragrunt when a
 
 - A Terraform or Terragrunt plan file must exist in `working-directory`.
 - The runner must have Terraform, OpenTofu, or Terragrunt available as required by the plan.
-- The runner must have Python 3 available on `PATH`.
+- The runner must have Python 3.8 or newer on `PATH`. The commenter uses `dataclasses` and `typing.Protocol` from the Python standard library.
 - The workflow needs `contents: read` and `pull-requests: write` permissions to post a PR comment.
 
-When `replace-existing-comments` is enabled, comments are matched by the configured header and an internal marker. Existing comments from the previous commenter are also recognized when they were created by `github-actions[bot]`. Use a unique `pr-commenter-comment-header` for each independent plan or matrix job. When replacement is disabled, `hide-previous-comments` retains its existing behavior.
+When `replace-existing-comments` is enabled, comments are matched by the configured header and a marker derived from the repository and normalized plan paths. Each independent plan or matrix job should use a distinct plan path or `pr-commenter-comment-header`. Comments from the previous commenter are recognized when their header and plan path match. When replacement is disabled, `hide-previous-comments` retains its existing behavior.
