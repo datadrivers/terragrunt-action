@@ -1,3 +1,15 @@
+# [4.7.0](https://github.com/datadrivers/terragrunt-action/compare/v4.6.0...v4.7.0) (2026-10-08)
+
+
+### Bug Fixes
+
+* include marker in size limit check ([5bf7e5a](https://github.com/datadrivers/terragrunt-action/commit/5bf7e5afc5ca929317a4a93ba94a31d17ba4baca))
+
+
+### Features
+
+* **terraform-pr-commenter:** add in-place comment replacement ([cf183f3](https://github.com/datadrivers/terragrunt-action/commit/cf183f36b60293cd9bf1c1dd9b62c6f7f43c5322))
+
 # [4.6.0](https://github.com/datadrivers/terragrunt-action/compare/v4.5.1...v4.6.0) (2026-09-24)
 
 
