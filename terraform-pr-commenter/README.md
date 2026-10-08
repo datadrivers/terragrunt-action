@@ -1,6 +1,6 @@
 # Terraform Plan PR Commenter
 
-Converts Terraform or Terragrunt plan files to JSON and posts a pull request comment.
+Converts Terraform or Terragrunt plan files to JSON and posts a PR comment.
 
 ## Inputs
 
@@ -33,11 +33,11 @@ Converts Terraform or Terragrunt plan files to JSON and posts a pull request com
 | `plan_changes_read` | Data sources to read |
 | `plan_changes_total` | Total changes, excluding reads and no-op resources |
 
-Counts are aggregated across all found plan files and printed in step logs. Replacements count as one change. If no plan files are found, the counts are zero.
+Counts are combined across all plan files and printed in the step logs. A replacement counts as one change. If no plan files are found, all counts are zero.
 
 ## Usage
 
-Generate a plan before running this action. The action searches the working directory for files matching `terraform-plan-filename`.
+Generate a plan before running this action. It searches `working-directory` for files matching `terraform-plan-filename`.
 
 ```yaml
 permissions:
@@ -63,13 +63,13 @@ steps:
 
 ## Binary detection
 
-With `use-automatic-binary-detection` enabled, the action uses Terragrunt when a plan's directory contains `terragrunt.hcl`. It selects Terraform or OpenTofu using `TG_TF_PATH`, version files (`.terraform-version`, `.opentofu-version`, or `.tool-versions`), or an available binary on `PATH`.
+With `use-automatic-binary-detection` enabled, the action uses Terragrunt if the plan's directory contains `terragrunt.hcl`. It selects Terraform or OpenTofu using `TG_TF_PATH`, version files (`.terraform-version`, `.opentofu-version`, or `.tool-versions`), or a binary on `PATH`.
 
 ## Requirements
 
 - A Terraform or Terragrunt plan file must exist in `working-directory`.
 - The runner must have Terraform, OpenTofu, or Terragrunt available as required by the plan.
-- The runner must have Python 3.8 or newer on `PATH`. The commenter uses `dataclasses` and `typing.Protocol` from the Python standard library.
-- The workflow needs `contents: read` and `pull-requests: write` permissions to post a PR comment.
+- The runner must have Python 3.8 or newer on `PATH`. The commenter uses only the Python standard library.
+- The workflow needs `pull-requests: write` to post a PR comment. Grant `contents: read` if it checks out the repository.
 
-When `replace-existing-comments` is enabled, comments are matched by the configured header and a marker derived from the repository and normalized plan paths. Each independent plan or matrix job should use a distinct plan path or `pr-commenter-comment-header`. Comments from the previous commenter are recognized when their header and plan path match. When replacement is disabled, `hide-previous-comments` retains its existing behavior.
+With `replace-existing-comments` enabled, the action updates a matching comment. It uses a marker based on the repository and normalized plan paths; comments from the previous commenter are matched by header and plan path. Give each independent plan or matrix job a distinct plan path or `pr-commenter-comment-header`. When replacement is disabled, `hide-previous-comments` retains its existing behavior.
