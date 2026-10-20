@@ -18,7 +18,7 @@ permissions: {}
 jobs:
   test-terraform-pr-commenter-python:
     name: Terraform PR commenter Python tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -27,7 +27,7 @@ jobs:
         run: python3 -B -m unittest discover -s terraform-pr-commenter/tests -t terraform-pr-commenter -p 'test_*.py'
   test-terraform-pr-comment:
     name: TF code in examples/test-pr-comment
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -58,7 +58,7 @@ jobs:
           enable-debug: true
   test-terraform-pr-comment-broken-json:
     name: Terraform PR commenter reports broken JSON
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -94,7 +94,7 @@ jobs:
           grep -Fq '{"planned_values":' <<< "$output"
   test-pr-comment-plan-counts:
     name: Terraform PR commenter exposes aggregated plan counts
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -135,7 +135,7 @@ jobs:
           grep -Fxq 'plan_changes_total=6' "$output_file"
   test-terragrunt-pr-comment:
     name: TF code in examples/test-pr-comment-terragrunt
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -168,7 +168,7 @@ jobs:
           enable-debug: true
   test-terragrunt-pr-comment-no-plan:
     name: TF code in examples/test-pr-comment-terragrunt-no-plan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -202,7 +202,7 @@ jobs:
           enable-debug: true
   test-terragrunt-pr-comment-no-change:
     name: TF code in examples/test-pr-comment-terragrunt-no-change
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -234,7 +234,7 @@ jobs:
           enable-debug: true
   test-terragrunt-pr-comment-with-no-summary:
     name: TF code in examples/test-pr-comment-terragrunt-with-no-summary
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -268,7 +268,7 @@ jobs:
           enable-debug: true
   test-terraform-pr-comment-with-binary-detection-override:
     name: TF code in examples/test-pr-comment-with-binary-detection-override
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -300,7 +300,7 @@ jobs:
           enable-debug: true
   test-terraform-pr-comment-versionfile:
     name: TF code in examples/test-pr-detect-versionfile
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -332,7 +332,7 @@ jobs:
           enable-debug: true
   test-terraform-pr-comment-versionfile-terragrunt:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -364,7 +364,7 @@ jobs:
           enable-debug: true
   test-terraform-pr-comment-working-directory:
     name: TF code in examples/test-pr-comment-working-directory
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -395,7 +395,7 @@ jobs:
           enable-debug: true
   test-terraform-detect-versions:
     name: TF code in examples/test-pr-detect-versionfile-terragrunt (no PR comment)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       contents: read
@@ -419,7 +419,7 @@ jobs:
           terraform plan -out terraform.tfplan # required to generate pr comments
   test-cache-scoping-stack-a:
     name: Test cache scoping - Stack A
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -472,7 +472,7 @@ jobs:
           terraform version
   test-cache-scoping-stack-b:
     name: Test cache scoping - Stack B
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -525,7 +525,7 @@ jobs:
           terraform version
   test-cache-scoping-validation:
     name: Validate cache scoping - Different hashes
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [test-cache-scoping-stack-a, test-cache-scoping-stack-b]
     steps:
       - name: Compare cache directories
@@ -560,7 +560,7 @@ jobs:
           echo "Cache configuration is correct: TF plugin cache is scoped per stack, TG provider cache is shared!"
   test-cache-inputs-disabled:
     name: Test cache toggles disabled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -584,7 +584,7 @@ jobs:
           terragrunt run --all -- init
   test-cache-terraform-only-disabled:
     name: Test cache toggle - TF plugins disabled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -610,7 +610,7 @@ jobs:
           terragrunt run --all -- init
   test-cache-terragrunt-only-disabled:
     name: Test cache toggle - TG caches disabled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -636,7 +636,7 @@ jobs:
           terragrunt run --all -- init
   test-cache-populate:
     name: Test cache population (run 1)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -731,7 +731,7 @@ jobs:
           # Cache will be saved in post action when job completes successfully
   test-cache-restore:
     name: Test cache restoration (run 2)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: test-cache-populate
     permissions:
       contents: read
@@ -829,7 +829,7 @@ jobs:
           echo "✓ TG provider cache successfully restored and reused"
   test-cache-invalidation:
     name: Test cache invalidation on lockfile change
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
